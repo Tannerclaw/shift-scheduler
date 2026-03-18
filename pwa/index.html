@@ -2,11 +2,14 @@
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="Shift Scheduler"/>
 <meta name="theme-color" id="themeColorMeta" content="#1D9E75"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
 <link rel="manifest" href="manifest.json"/>
 <title>Concrete Finisher Shift Scheduler</title>
 <style>
@@ -34,7 +37,18 @@
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);transition:background .2s,color .2s;}
-.app{display:flex;flex-direction:column;height:100%;max-width:1200px;margin:0 auto;}
+.app{display:flex;flex-direction:column;height:100%;max-width:1200px;margin:0 auto;width:100%;min-width:320px;}
+
+/* Mobile viewport fix for Chrome/Brave */
+@supports (height: 100dvh) {
+  html,body{height:100dvh;}
+  .app{height:100dvh;}
+}
+
+/* Prevent zoom on input focus for iOS */
+@media screen and (max-width: 768px) {
+  input,select,textarea{font-size:16px;}
+}
 
 /* ── HEADER ── */
 .app-header{background:var(--green);color:#fff;padding:env(safe-area-inset-top,0) 0 0;flex-shrink:0;box-shadow:0 2px 10px rgba(0,0,0,0.2);}
@@ -44,6 +58,17 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
 .header-actions{display:flex;gap:6px;flex-shrink:0;align-items:center;}
 .hdr-btn{background:rgba(255,255,255,0.18);border:none;color:#fff;border-radius:6px;padding:5px 10px;font-size:11px;font-family:inherit;cursor:pointer;white-space:nowrap;transition:background .15s;}
 .hdr-btn:active{background:rgba(255,255,255,0.32);}
+
+/* Mobile header fixes */
+@media screen and (max-width: 480px) {
+  .header-inner{flex-wrap:wrap;padding:8px 10px;}
+  .app-title{font-size:13px;}
+  .app-subtitle{font-size:9px;}
+  .header-actions{gap:4px;flex-wrap:wrap;justify-content:flex-end;}
+  .hdr-btn{padding:4px 8px;font-size:10px;}
+  .dm-toggle{padding:2px;}
+  .dm-icon{width:22px;height:22px;font-size:11px;}
+}
 
 /* Dark mode toggle */
 .dm-toggle{display:flex;align-items:center;gap:0;background:rgba(255,255,255,0.15);border-radius:20px;padding:3px;cursor:pointer;border:none;transition:background .2s;}
@@ -73,9 +98,15 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
 .add-btn:active{filter:brightness(.88);}
 
 /* Grid */
-.main-grid{display:grid;grid-template-columns:1fr;gap:10px;}
+.main-grid{display:grid;grid-template-columns:1fr;gap:10px;min-width:0;}
 @media(min-width:620px){.main-grid{grid-template-columns:260px 1fr;}}
 @media(min-width:900px){.main-grid{grid-template-columns:300px 1fr;}}
+
+/* Ensure single column on mobile */
+@media screen and (max-width: 619px) {
+  .main-grid{grid-template-columns:1fr!important;}
+  .crew-grid{grid-template-columns:1fr;}
+}
 .section-head{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
 
 /* Crew */
@@ -173,7 +204,7 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
       <div class="header-actions">
         <button class="hdr-btn" onclick="exportCSV()">CSV</button>
         <button class="hdr-btn" onclick="printSchedule()">Print / PDF</button>
-        <button class="hdr-btn" onclick="sendWhatsApp()">📱 WhatsApp</button>
+        <button class="hdr-btn" onclick="sendWhatsApp()">📱 Message All Shifts</button>
         <button class="dm-toggle" id="dmToggle" onclick="toggleDark()" title="Toggle dark mode" aria-label="Toggle dark mode">
           <span class="dm-icon" id="iconSun">☀️</span>
           <span class="dm-icon" id="iconMoon">🌙</span>
@@ -184,6 +215,7 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
       <div class="tab active" onclick="showTab('schedule',this)">Schedule</div>
       <div class="tab" onclick="showTab('roster',this)">Roster</div>
       <div class="tab" onclick="showTab('timeline',this)">Timeline</div>
+      <div class="tab" onclick="showTab('settings',this)">Settings</div>
     </div>
   </div>
 
@@ -246,6 +278,41 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
       </div>
     </div>
 
+    <!-- SETTINGS -->
+    <div class="panel" id="panel-settings">
+      <div style="padding:20px;max-width:600px;">
+        <h2 style="margin-bottom:20px;">Settings</h2>
+        
+        <div style="background:var(--surface2);padding:15px;border-radius:8px;margin-bottom:15px;">
+          <h3 style="margin-bottom:10px;">Clear Schedule</h3>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:10px;">Unassign all workers from time slots. Workers remain in roster.</p>
+          <button class="hdr-btn" style="background:var(--amber);color:#000;" onclick="clearAllData()">🗑️ Clear Schedule</button>
+        </div>
+        
+        <div style="background:var(--surface2);padding:15px;border-radius:8px;margin-bottom:15px;">
+          <h3 style="margin-bottom:10px;">Delete All Workers</h3>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:10px;">Remove all workers from roster. This cannot be undone.</p>
+          <button class="hdr-btn" style="background:var(--red);color:#fff;" onclick="deleteAllWorkers()">⚠️ Delete All Workers</button>
+        </div>
+        
+        <div style="background:var(--surface2);padding:15px;border-radius:8px;margin-bottom:15px;">
+          <h3 style="margin-bottom:10px;">Export Data</h3>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:10px;">Download your schedule data as CSV.</p>
+          <button class="hdr-btn" onclick="exportCSV()">📥 Export CSV</button>
+        </div>
+        
+        <div style="background:var(--surface2);padding:15px;border-radius:8px;">
+          <h3 style="margin-bottom:10px;">About</h3>
+          <p style="font-size:12px;color:var(--text2);">Shift Scheduler v1.0<br>Built for concrete finishing crews<br>WhatsApp integration included</p>
+        </div>
+        
+        <div style="background:var(--surface2);padding:15px;border-radius:8px;">
+          <h3 style="margin-bottom:10px;">About</h3>
+          <p style="font-size:12px;color:var(--text2);">Shift Scheduler v1.0<br>Built for concrete finishing crews<br>WhatsApp integration included</p>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -264,11 +331,51 @@ function defaultWorkers(){
   }));
 }
 
-function load(){try{const s=localStorage.getItem('shiftV4');return s?JSON.parse(s):null;}catch{return null;}}
-function save(){try{localStorage.setItem('shiftV4',JSON.stringify(st));}catch{}}
+const API_URL = '';
 
-let st=load()||{
-  workers:defaultWorkers(),
+// Load from server (primary) or localStorage (fallback)
+async function loadFromServer() {
+  try {
+    const res = await fetch(API_URL + '/api/data');
+    if (!res.ok) throw new Error('Server error');
+    const data = await res.json();
+    localStorage.setItem('shiftV4', JSON.stringify(data));
+    return data;
+  } catch (e) {
+    console.log('Server load failed, using localStorage:', e);
+    try {
+      const s = localStorage.getItem('shiftV4');
+      return s ? JSON.parse(s) : null;
+    } catch {
+      return null;
+    }
+  }
+}
+
+// Save to server (primary) and localStorage (backup)
+async function saveToServer() {
+  try {
+    const res = await fetch(API_URL + '/api/data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(st)
+    });
+    if (!res.ok) throw new Error('Server error');
+  } catch (e) {
+    console.log('Server save failed:', e);
+  }
+  // Always backup to localStorage
+  try {
+    localStorage.setItem('shiftV4', JSON.stringify(st));
+  } catch {}
+}
+
+// Legacy sync functions
+function load(){try{const s=localStorage.getItem('shiftV4');return s?JSON.parse(s):null;}catch{return null;}}
+function save(){saveToServer();}
+
+let st = {
+  workers:[],
   slots:[{time:"06:00",desc:""},{time:"08:00",desc:""},{time:"10:00",desc:""},{time:"14:00",desc:""},{time:"18:00",desc:""}],
   assignments:{},
   darkMode:false
@@ -312,6 +419,9 @@ function addWorker(){const i=document.getElementById('newWorker');const n=i.valu
 function addWorkerWithPhone(){const nameInput=document.getElementById('newWorkerName');const phoneInput=document.getElementById('newWorkerPhone');const n=nameInput.value.trim();const p=phoneInput.value.trim();if(!n||st.workers.find(w=>w.name===n))return;st.workers.push({name:n,phone:p,unavailable:false});nameInput.value='';phoneInput.value='';save();render();}
 function updateWorkerPhone(name,phone){const w=st.workers.find(x=>x.name===name);if(w){w.phone=phone;save();}}
 function updateWorkerName(oldName,newName){const n=newName.trim();if(!n||n===oldName)return;const w=st.workers.find(x=>x.name===oldName);if(w){w.name=n;save();render();}}
+function deleteWorker(name){if(!confirm('Delete '+name+'?'))return;st.workers=st.workers.filter(w=>w.name!==name);for(const t in st.assignments){st.assignments[t]=st.assignments[t].filter(n=>n!==name);if(st.assignments[t].length===0)delete st.assignments[t];}save();render();}
+function clearAllData(){if(!confirm('Clear all schedule assignments?\n\nWorkers will remain but be unassigned from all time slots.'))return;st.assignments={};save();render();alert('Schedule cleared! All workers are now unassigned.');}
+function deleteAllWorkers(){if(!confirm('⚠️ WARNING: This will delete ALL workers from the roster.\n\nThis cannot be undone.\n\nAre you sure?'))return;if(!confirm('Are you absolutely sure?'))return;st.workers=[];st.assignments={};save();render();alert('All workers deleted!');}
 function addSlot(){const t=document.getElementById('newSlotTime').value;if(!t||st.slots.find(s=>s.time===t))return;st.slots.push({time:t,desc:''});st.slots.sort((a,b)=>tMin(a.time)-tMin(b.time));save();render();}
 function removeSlot(t){st.slots=st.slots.filter(s=>s.time!==t);delete st.assignments[t];save();render();}
 function toggleAvail(name){const w=st.workers.find(x=>x.name===name);if(w){w.unavailable=!w.unavailable;save();render();}}
@@ -341,9 +451,9 @@ function renderPools(){
     av.addEventListener('click',e=>{e.stopPropagation();toggleAvail(w.name);});
     el.appendChild(av);
     if(!w.unavailable&&!assigned){
-      el.addEventListener('dragstart',e=>{dW=w.name;dFS=null;setTimeout(()=>el.classList.add('dragging'),0);e.dataTransfer.effectAllowed='move';});
-      el.addEventListener('dragend',()=>el.classList.remove('dragging'));
-      el.addEventListener('touchstart',e=>ts(e,w.name,null),{passive:true});
+      el.addEventListener('dragstart',e=>{dW=w.name;dFS=null;console.log('dragstart pool:',dW);setTimeout(()=>el.classList.add('dragging'),0);e.dataTransfer.effectAllowed='move';});
+      el.addEventListener('dragend',()=>{el.classList.remove('dragging');console.log('dragend pool');});
+      el.addEventListener('touchstart',e=>{e.preventDefault();ts(e,w.name,null);},{passive:false});
     }
     pool.appendChild(el);
   }
@@ -352,10 +462,9 @@ function renderPools(){
   st.workers.slice(half).forEach(w=>chip(w,p2));
 
   [p1,p2].forEach(pool=>{
-    pool.addEventListener('dragover',e=>{if(dFS!==null){e.preventDefault();pool.classList.add('drop-target');}});
-    pool.addEventListener('dragleave',()=>pool.classList.remove('drop-target'));
-    pool.addEventListener('drop',e=>{e.preventDefault();pool.classList.remove('drop-target');if(dW&&dFS!==null){st.assignments[dFS]=st.assignments[dFS].filter(n=>n!==dW);dW=null;dFS=null;save();render();}});
-    pool.addEventListener('touchend',e=>tdPool(e,pool),{passive:false});
+    pool.addEventListener('dragover',e=>{if(dFS!==null){e.preventDefault();pool.classList.add('drop-target');console.log('dragover pool');}});
+    pool.addEventListener('dragleave',()=>{pool.classList.remove('drop-target');console.log('dragleave pool');});
+    pool.addEventListener('drop',e=>{e.preventDefault();pool.classList.remove('drop-target');console.log('DROP on pool:',dW,'from',dFS);if(dW&&dFS!==null){st.assignments[dFS]=st.assignments[dFS].filter(n=>n!==dW);dW=null;dFS=null;save();render();console.log('unassigned worker');}else if(dW&&dFS===null){dW=null;dFS=null;console.log('dropped back in pool');}});
   });
 }
 
@@ -364,7 +473,7 @@ function renderSlots(){
   st.slots.forEach(s=>{
     const asgn=st.assignments[s.time]||[];
     const outAsgn=asgn.filter(n=>{const w=st.workers.find(x=>x.name===n);return w&&w.unavailable;});
-    const card=document.createElement('div');card.className='slot-card';
+    const card=document.createElement('div');card.className='slot-card';card.dataset.time=s.time;
 
     const ta=document.createElement('textarea');ta.className='slot-desc';ta.placeholder='add task description...';ta.value=s.desc||'';
     ta.addEventListener('input',()=>{s.desc=ta.value;autoH(ta);save();});
@@ -380,16 +489,26 @@ function renderSlots(){
       const w=st.workers.find(x=>x.name===n);const isOut=w&&w.unavailable;const c=wColor(n);
       const pill=document.createElement('div');pill.className='assigned-pill'+(isOut?' out-pill':'');pill.draggable=true;
       pill.innerHTML=`<span class="chip-dot" style="background:${isOut?'var(--red)':c};"></span><span>${n}${isOut?' ⚠':''}</span>`;
-      pill.addEventListener('dragstart',e=>{dW=n;dFS=s.time;setTimeout(()=>pill.classList.add('dragging'),0);e.dataTransfer.effectAllowed='move';});
-      pill.addEventListener('dragend',()=>pill.classList.remove('dragging'));
-      pill.addEventListener('touchstart',e=>ts(e,n,s.time),{passive:true});
+      pill.addEventListener('dragstart',e=>{dW=n;dFS=s.time;console.log('dragstart slot:',dW,'from',dFS);setTimeout(()=>pill.classList.add('dragging'),0);e.dataTransfer.effectAllowed='move';});
+      pill.addEventListener('dragend',()=>{pill.classList.remove('dragging');console.log('dragend slot');});
+      pill.addEventListener('touchstart',e=>{e.preventDefault();ts(e,n,s.time);},{passive:false});
       area.appendChild(pill);
     });
     card.appendChild(area);
 
-    card.addEventListener('dragover',e=>{e.preventDefault();card.classList.add('drag-over');});
-    card.addEventListener('dragleave',()=>card.classList.remove('drag-over'));
+    card.addEventListener('dragover',e=>{e.preventDefault();card.classList.add('drag-over');console.log('dragover slot');});
+    card.addEventListener('dragleave',()=>{card.classList.remove('drag-over');console.log('dragleave slot');});
     card.addEventListener('drop',e=>{
+      e.preventDefault();card.classList.remove('drag-over');console.log('DROP on slot:',dW,'from',dFS);if(!dW)return;
+      const w=st.workers.find(x=>x.name===dW);if(w&&w.unavailable){console.log('worker unavailable');return;}
+      if(dFS)st.assignments[dFS]=st.assignments[dFS].filter(n=>n!==dW);
+      if(!st.assignments[s.time])st.assignments[s.time]=[];
+      if(!st.assignments[s.time].includes(dW))st.assignments[s.time].push(dW);
+      dW=null;dFS=null;save();render();console.log('drop success');
+    });
+    area.addEventListener('dragover',e=>{e.preventDefault();card.classList.add('drag-over');});
+    area.addEventListener('dragleave',()=>card.classList.remove('drag-over'));
+    area.addEventListener('drop',e=>{
       e.preventDefault();card.classList.remove('drag-over');if(!dW)return;
       const w=st.workers.find(x=>x.name===dW);if(w&&w.unavailable)return;
       if(dFS)st.assignments[dFS]=st.assignments[dFS].filter(n=>n!==dW);
@@ -398,6 +517,18 @@ function renderSlots(){
       dW=null;dFS=null;save();render();
     });
     card.addEventListener('touchend',e=>tdSlot(e,card,s.time),{passive:false});
+    
+    // WhatsApp button for this specific time slot
+    const asgnCount=(st.assignments[s.time]||[]).length;
+    if(asgnCount>0){
+      const waBtn=document.createElement('button');
+      waBtn.className='hdr-btn';
+      waBtn.style.cssText='margin-top:8px;width:100%;font-size:11px;';
+      waBtn.textContent='📱 Send '+tStr(tMin(s.time))+' to Group';
+      waBtn.onclick=()=>sendSlotToWhatsApp(s.time);
+      card.appendChild(waBtn);
+    }
+    
     col.appendChild(card);if(s.desc)autoH(ta);
   });
 }
@@ -456,6 +587,15 @@ function renderRoster(){
     btn.addEventListener('click',()=>toggleAvail(w.name));
     topRow.appendChild(btn);
     
+    // Delete button
+    const delBtn=document.createElement('button');
+    delBtn.className='mark-btn';
+    delBtn.style.cssText='background:var(--red);color:#fff;margin-left:4px;';
+    delBtn.textContent='✕';
+    delBtn.title='Delete worker';
+    delBtn.addEventListener('click',()=>deleteWorker(w.name));
+    topRow.appendChild(delBtn);
+    
     chip.appendChild(topRow);
     
     // Phone input
@@ -469,32 +609,75 @@ function renderRoster(){
 }
 
 // ── Touch drag ────────────────────────────────────────────────────────────
+let touchDragActive=false;
+
 function ts(e,name,fromSlot){
-  dW=name;dFS=fromSlot;const t=e.touches[0];
+  if(e.touches.length!==1)return;
+  dW=name;dFS=fromSlot;touchDragActive=true;
+  const t=e.touches[0];
+  console.log('touchstart:',name,'from',fromSlot);
+  
   if(tGhost)tGhost.remove();
-  tGhost=document.createElement('div');tGhost.textContent=name;
-  tGhost.style.cssText=`position:fixed;z-index:9999;pointer-events:none;background:#1D9E75;color:#fff;padding:4px 10px;border-radius:4px;font-size:12px;opacity:.92;left:${t.clientX-30}px;top:${t.clientY-14}px;font-family:system-ui;`;
+  tGhost=document.createElement('div');
+  tGhost.textContent=name;
+  tGhost.style.cssText='position:fixed;z-index:9999;pointer-events:none;background:#1D9E75;color:#fff;padding:4px 10px;border-radius:4px;font-size:12px;opacity:.92;left:'+(t.clientX-30)+'px;top:'+(t.clientY-14)+'px;font-family:system-ui;';
   document.body.appendChild(tGhost);
-  document.addEventListener('touchmove',tm,{passive:false});
-  document.addEventListener('touchend',te,{passive:false});
+  
+  document.querySelectorAll('.slot-card').forEach(c=>c.style.border='2px dashed var(--green)');
+  document.querySelectorAll('.crew-pool').forEach(p=>p.style.border='2px dashed var(--green)');
 }
-function tm(e){e.preventDefault();const t=e.touches[0];if(tGhost){tGhost.style.left=(t.clientX-30)+'px';tGhost.style.top=(t.clientY-14)+'px';}}
-function tdSlot(e,card,slotTime){
-  if(!dW)return;const t=e.changedTouches[0];const el=document.elementFromPoint(t.clientX,t.clientY);
-  if(card.contains(el)||el===card){
-    e.preventDefault();const w=st.workers.find(x=>x.name===dW);if(w&&w.unavailable){ft();return;}
-    if(dFS)st.assignments[dFS]=st.assignments[dFS].filter(n=>n!==dW);
-    if(!st.assignments[slotTime])st.assignments[slotTime]=[];
-    if(!st.assignments[slotTime].includes(dW))st.assignments[slotTime].push(dW);
-    ft();
+
+function tm(e){
+  if(!touchDragActive||!tGhost)return;
+  e.preventDefault();
+  const t=e.touches[0];
+  tGhost.style.left=(t.clientX-30)+'px';
+  tGhost.style.top=(t.clientY-14)+'px';
+}
+
+function teGlobal(e){
+  if(!touchDragActive||!dW)return;
+  touchDragActive=false;
+  
+  if(tGhost){tGhost.remove();tGhost=null;}
+  
+  document.querySelectorAll('.slot-card').forEach(c=>c.style.border='');
+  document.querySelectorAll('.crew-pool').forEach(p=>p.style.border='');
+  
+  const t=e.changedTouches[0];
+  const el=document.elementFromPoint(t.clientX,t.clientY);
+  console.log('touchend on element:',el?.className||'none');
+  
+  const slotCard=el?.closest('.slot-card');
+  if(slotCard){
+    const time=slotCard.dataset.time;
+    console.log('dropped on slot:',time);
+    if(time){
+      const w=st.workers.find(x=>x.name===dW);
+      if(w&&w.unavailable){dW=null;dFS=null;return;}
+      if(dFS)st.assignments[dFS]=st.assignments[dFS].filter(n=>n!==dW);
+      if(!st.assignments[time])st.assignments[time]=[];
+      if(!st.assignments[time].includes(dW))st.assignments[time].push(dW);
+      save();render();
+    }
+    dW=null;dFS=null;return;
   }
+  
+  const pool=el?.closest('.crew-pool');
+  if(pool&&dFS){
+    console.log('dropped on pool');
+    st.assignments[dFS]=st.assignments[dFS].filter(n=>n!==dW);
+    save();render();
+    dW=null;dFS=null;return;
+  }
+  
+  console.log('dropped nowhere valid');
+  dW=null;dFS=null;
 }
-function tdPool(e,pool){
-  if(!dW||!dFS)return;const t=e.changedTouches[0];const el=document.elementFromPoint(t.clientX,t.clientY);
-  if(pool.contains(el)||el===pool){e.preventDefault();st.assignments[dFS]=st.assignments[dFS].filter(n=>n!==dW);ft();}
-}
-function te(){ft();}
-function ft(){if(tGhost){tGhost.remove();tGhost=null;}document.removeEventListener('touchmove',tm);document.removeEventListener('touchend',te);dW=null;dFS=null;save();render();}
+
+// Global touch listeners
+document.addEventListener('touchmove',tm,{passive:false});
+document.addEventListener('touchend',teGlobal,{passive:false});
 
 // ── Export / Print ────────────────────────────────────────────────────────
 function exportCSV(){
@@ -516,19 +699,23 @@ function printSchedule(){
 
 // ── WhatsApp ──────────────────────────────────────────────────────────────
 function sendWhatsApp(){
+  if(st.workers.length===0){alert('No workers in roster!\n\nAdd workers in the Roster tab first.');return;}
+  
   const date=new Date().toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
   let msg='*Shift Schedule - ' + date + '*\n\n';
   
+  // Show all time slots with assigned workers
+  let hasAssignments=false;
   st.slots.forEach(s=>{
     const workers=st.assignments[s.time]||[];
     if(workers.length>0){
+      hasAssignments=true;
       const avail=workers.filter(n=>{const w=st.workers.find(x=>x.name===n);return !w||!w.unavailable;});
       const out=workers.filter(n=>{const w=st.workers.find(x=>x.name===n);return w&&w.unavailable;});
       
       msg+='*' + tStr(tMin(s.time)) + '*\n';
       if(s.desc)msg+=s.desc + '\n';
       
-      // Workers with phone numbers
       if(avail.length){
         msg+='Workers: ';
         avail.forEach((n,i)=>{
@@ -545,9 +732,63 @@ function sendWhatsApp(){
     }
   });
   
-  const total=st.workers.filter(w=>wSlot(w.name)&&!w.unavailable).length;
-  const outCount=st.workers.filter(w=>w.unavailable).length;
-  msg+='Total on shift: ' + total + ' | Out: ' + outCount;
+  if(!hasAssignments)msg+='No workers assigned to shifts yet.\n\n';
+  
+  // Show all workers and their status
+  msg+='*All Workers*\n';
+  const available=st.workers.filter(w=>!w.unavailable);
+  const out=st.workers.filter(w=>w.unavailable);
+  
+  if(available.length){
+    msg+='Available: ';
+    available.forEach((w,i)=>{
+      const slot=wSlot(w.name);
+      msg+=w.name;
+      if(slot)msg+=' ('+tStr(tMin(slot))+')';
+      else msg+=' (unassigned)';
+      if(i<available.length-1)msg+=', ';
+    });
+    msg+='\n';
+  }
+  
+  if(out.length){
+    msg+='OUT: ' + out.map(w=>w.name).join(', ') + '\n';
+  }
+  
+  msg+='\nTotal: ' + st.workers.length + ' | On Shift: ' + st.workers.filter(w=>wSlot(w.name)&&!w.unavailable).length + ' | Out: ' + out.length;
+  
+  const encoded=encodeURIComponent(msg);
+  window.open('https://wa.me/?text=' + encoded,'_blank');
+}
+
+// Send specific time slot to WhatsApp
+function sendSlotToWhatsApp(slotTime){
+  const workers=st.assignments[slotTime]||[];
+  if(workers.length===0){alert('No workers assigned to '+tStr(tMin(slotTime))+'!');return;}
+  
+  const date=new Date().toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
+  const slot=st.slots.find(s=>s.time===slotTime);
+  
+  let msg='*Shift - ' + date + '*\n';
+  msg+='*' + tStr(tMin(slotTime)) + '*\n';
+  if(slot&&slot.desc)msg+=slot.desc + '\n';
+  
+  const avail=workers.filter(n=>{const w=st.workers.find(x=>x.name===n);return !w||!w.unavailable;});
+  const out=workers.filter(n=>{const w=st.workers.find(x=>x.name===n);return w&&w.unavailable;});
+  
+  if(avail.length){
+    msg+='Workers: ';
+    avail.forEach((n,i)=>{
+      const w=st.workers.find(x=>x.name===n);
+      msg+=n;
+      if(w&&w.phone)msg+=' (' + w.phone + ')';
+      if(i<avail.length-1)msg+=', ';
+    });
+    msg+='\n';
+  }
+  
+  if(out.length)msg+='OUT: ' + out.join(', ') + '\n';
+  msg+='Total: ' + avail.length + ' | Out: ' + out.length;
   
   const encoded=encodeURIComponent(msg);
   window.open('https://wa.me/?text=' + encoded,'_blank');
@@ -565,7 +806,23 @@ window.addEventListener('beforeinstallprompt',e=>{
 });
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 
-render();
+// Initialize: load from server, then render
+async function init() {
+  const serverData = await loadFromServer();
+  if (serverData) {
+    st = serverData;
+    // Ensure all workers have required fields
+    st.workers.forEach(w=>{
+      if(w.unavailable===undefined)w.unavailable=false;
+      if(w.phone===undefined)w.phone='';
+    });
+    if(st.darkMode===undefined)st.darkMode=false;
+  }
+  applyTheme();
+  render();
+}
+
+init();
 </script>
 </body>
 </html>
