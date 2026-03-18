@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Shift Scheduler"/>
+<meta name="theme-color" id="themeColorMeta" content="#1D9E75"/>
+<link rel="manifest" href="manifest.json"/>
+<title>Concrete Finisher Shift Scheduler</title>
+<style>
+/* ── THEME TOKENS ── */
+[data-theme="light"]{
+  --green:#1D9E75;--green-light:#E1F5EE;--green-dark:#085041;
+  --amber:#FAC775;--amber-light:#FAEEDA;--amber-dark:#854F0B;
+  --red:#E24B4A;--red-light:#FCEBEB;
+  --bg:#f5f3ef;--surface:#ffffff;--surface2:#f0ede8;--surface3:#e8e5df;
+  --border:rgba(44,44,42,0.12);--border2:rgba(44,44,42,0.22);
+  --text:#2c2c2a;--text2:#5f5e5a;--text3:#888780;
+  --toggle-bg:#d3d1c7;--toggle-knob:#fff;
+  --shadow:0 1px 4px rgba(0,0,0,0.08);
+}
+[data-theme="dark"]{
+  --green:#1D9E75;--green-light:#0d3d2c;--green-dark:#9FE1CB;
+  --amber:#FAC775;--amber-light:#3d2e0a;--amber-dark:#EF9F27;
+  --red:#F09595;--red-light:#3d1212;
+  --bg:#141412;--surface:#1e1e1b;--surface2:#272724;--surface3:#2e2e2b;
+  --border:rgba(255,255,255,0.09);--border2:rgba(255,255,255,0.17);
+  --text:#e8e6e0;--text2:#a8a69f;--text3:#6b6a65;
+  --toggle-bg:#1D9E75;--toggle-knob:#fff;
+  --shadow:0 1px 4px rgba(0,0,0,0.4);
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);transition:background .2s,color .2s;}
+.app{display:flex;flex-direction:column;height:100%;max-width:1200px;margin:0 auto;}
+
+/* ── HEADER ── */
+.app-header{background:var(--green);color:#fff;padding:env(safe-area-inset-top,0) 0 0;flex-shrink:0;box-shadow:0 2px 10px rgba(0,0,0,0.2);}
+.header-inner{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.app-title{font-size:15px;font-weight:600;letter-spacing:.01em;}
+.app-subtitle{font-size:10px;opacity:.75;margin-top:1px;}
+.header-actions{display:flex;gap:6px;flex-shrink:0;align-items:center;}
+.hdr-btn{background:rgba(255,255,255,0.18);border:none;color:#fff;border-radius:6px;padding:5px 10px;font-size:11px;font-family:inherit;cursor:pointer;white-space:nowrap;transition:background .15s;}
+.hdr-btn:active{background:rgba(255,255,255,0.32);}
+
+/* Dark mode toggle */
+.dm-toggle{display:flex;align-items:center;gap:0;background:rgba(255,255,255,0.15);border-radius:20px;padding:3px;cursor:pointer;border:none;transition:background .2s;}
+.dm-toggle:active{background:rgba(255,255,255,0.28);}
+.dm-icon{font-size:13px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background .2s,transform .2s;}
+.dm-icon.active{background:rgba(255,255,255,0.3);transform:scale(1.05);}
+
+/* Tab bar */
+.tab-bar{display:flex;background:var(--green-dark);padding:0 6px;overflow-x:auto;scrollbar-width:none;}
+.tab-bar::-webkit-scrollbar{display:none;}
+[data-theme="dark"] .tab-bar{background:#0a2a1e;}
+.tab{flex-shrink:0;padding:8px 12px;font-size:11px;color:rgba(255,255,255,0.55);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;}
+.tab.active{color:#fff;border-bottom-color:var(--amber);}
+
+/* ── CONTENT ── */
+.content{flex:1;overflow-y:auto;padding:10px;-webkit-overflow-scrolling:touch;}
+.panel{display:none;}.panel.active{display:block;}
+
+/* Controls */
+.settings-strip{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.ctrl-card{background:var(--surface);border:0.5px solid var(--border);border-radius:6px;padding:8px 10px;box-shadow:var(--shadow);}
+.ctrl-card label{font-size:10px;color:var(--text3);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;}
+.ctrl-row{display:flex;gap:5px;}
+.ctrl-row input{flex:1;font-size:13px;padding:5px 8px;border:0.5px solid var(--border2);border-radius:6px;background:var(--surface2);color:var(--text);font-family:inherit;transition:background .2s,border-color .15s;}
+.ctrl-row input:focus{outline:none;border-color:var(--green);}
+.add-btn{font-size:13px;padding:5px 12px;cursor:pointer;background:var(--green);color:#fff;border:none;border-radius:6px;font-weight:500;transition:filter .15s;}
+.add-btn:active{filter:brightness(.88);}
+
+/* Grid */
+.main-grid{display:grid;grid-template-columns:1fr;gap:10px;}
+@media(min-width:620px){.main-grid{grid-template-columns:260px 1fr;}}
+@media(min-width:900px){.main-grid{grid-template-columns:300px 1fr;}}
+.section-head{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
+
+/* Crew */
+.crew-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px;}
+.crew-pool{display:flex;flex-direction:column;gap:2px;min-height:40px;border-radius:6px;padding:3px;border:1px dashed transparent;transition:background .15s,border-color .15s;}
+.crew-pool.drop-target{background:var(--green-light);border-color:var(--green);}
+.worker-chip{background:var(--surface);border:0.5px solid var(--border2);border-radius:4px;padding:3px 5px;font-size:11px;font-weight:500;color:var(--text);cursor:grab;user-select:none;display:flex;align-items:center;gap:4px;overflow:hidden;transition:background .2s,border-color .15s,opacity .15s;}
+.worker-chip.unavailable{opacity:.5;background:var(--red-light);border-color:var(--red);border-style:dashed;cursor:default;}
+.worker-chip.assigned{background:var(--surface2);color:var(--text3);border-style:dashed;cursor:default;font-weight:400;}
+.worker-chip.dragging{opacity:.3;}
+.chip-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.chip-name{overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;}
+.chip-tag{font-size:9px;color:var(--text3);flex-shrink:0;}
+.avail-btn{width:15px;height:15px;border-radius:50%;border:0.5px solid var(--border2);background:var(--surface2);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:7px;margin-left:auto;color:var(--text3);transition:background .15s,border-color .15s;}
+.avail-btn.out{background:var(--red);border-color:var(--red);color:#fff;}
+
+/* Slots */
+.slots-col{display:flex;flex-direction:column;gap:5px;}
+.slot-card{background:var(--surface);border:0.5px solid var(--border);border-radius:6px;padding:7px 10px;transition:border-color .15s,background .15s,box-shadow .15s;box-shadow:var(--shadow);}
+.slot-card.drag-over{border-color:var(--green);border-width:1.5px;background:var(--green-light);}
+.slot-desc{width:100%;text-align:center;font-size:11px;font-weight:500;color:var(--text);background:transparent;border:none;border-bottom:0.5px dashed var(--border2);outline:none;padding:0 4px;resize:none;overflow:hidden;line-height:1.4;font-family:inherit;display:block;min-height:10px;margin-bottom:5px;}
+.slot-desc::placeholder{color:var(--text3);font-style:italic;font-weight:400;}
+.slot-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+.slot-time{font-size:13px;font-weight:600;color:var(--text);}
+.slot-rm{background:none;border:none;font-size:9px;color:var(--text3);cursor:pointer;opacity:.35;padding:2px 4px;transition:opacity .15s;}
+.slot-rm:hover{opacity:1;color:var(--red);}
+.slot-workers{display:flex;flex-wrap:wrap;gap:2px;min-height:22px;align-items:center;}
+.slot-workers.empty::after{content:"drop workers here";font-size:10px;color:var(--text3);font-style:italic;}
+.assigned-pill{background:var(--surface);border:0.5px solid var(--border2);border-radius:4px;padding:3px 6px;font-size:11px;font-weight:500;display:flex;align-items:center;gap:4px;cursor:grab;user-select:none;color:var(--text);transition:background .2s;}
+.assigned-pill:active{opacity:.7;}
+.assigned-pill.dragging{opacity:.3;}
+.out-pill{border-color:var(--red);border-style:dashed;opacity:.55;}
+.unavail-warn{font-size:9px;color:var(--red);background:var(--red-light);border-radius:3px;padding:1px 5px;margin-left:6px;font-weight:500;}
+
+/* Info bar */
+.info-bar{background:var(--surface2);border-left:3px solid var(--green);border-radius:0 6px 6px 0;padding:7px 12px;margin-top:10px;font-size:11px;color:var(--text2);line-height:1.7;}
+
+/* Timeline */
+.tl-wrap{overflow-x:auto;}
+.tl-hdr{display:flex;margin-left:110px;border-bottom:0.5px solid var(--border);padding-bottom:3px;margin-bottom:4px;}
+.tl-hr{font-size:10px;color:var(--text3);text-align:center;flex:3;}
+.tl-row{display:flex;align-items:center;margin-bottom:3px;height:18px;}
+.tl-label{width:110px;font-size:10px;color:var(--text2);padding-right:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tl-track{flex:1;position:relative;height:13px;background:var(--surface2);border-radius:2px;}
+.tl-bar{position:absolute;height:100%;border-radius:2px;}
+.tl-empty{font-size:11px;color:var(--text3);padding:8px 0;font-style:italic;}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:11px;color:var(--text2);}
+.leg-sq{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:3px;vertical-align:middle;}
+
+/* Roster */
+.roster-search{width:100%;padding:8px 12px;border:0.5px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text);font-size:13px;font-family:inherit;margin-bottom:10px;transition:background .2s;}
+.roster-search:focus{outline:none;border-color:var(--green);}
+.roster-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:4px;}
+.roster-chip{background:var(--surface);border:0.5px solid var(--border);border-radius:4px;padding:5px 8px;font-size:11px;display:flex;align-items:center;gap:5px;transition:background .2s,border-color .15s;}
+.roster-chip.is-assigned{border-color:var(--green);background:var(--green-light);}
+.roster-chip.is-out{border-color:var(--red);background:var(--red-light);}
+.roster-slot-tag{font-size:9px;color:var(--green-dark);background:rgba(29,158,117,0.15);border-radius:3px;padding:1px 5px;margin-left:auto;white-space:nowrap;}
+.mark-btn{margin-left:auto;font-size:9px;padding:2px 6px;border-radius:3px;border:0.5px solid var(--border2);background:var(--surface2);color:var(--text2);cursor:pointer;font-family:inherit;white-space:nowrap;transition:background .15s;}
+.mark-btn.mark-out{background:var(--red-light);border-color:var(--red);color:var(--red);}
+.mark-btn.mark-in{background:var(--green-light);border-color:var(--green);color:var(--green-dark);}
+
+/* Install banner */
+.install-banner{background:var(--amber-light);border:0.5px solid var(--amber);border-radius:6px;padding:9px 12px;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.install-banner p{font-size:11px;color:var(--text2);flex:1;}
+.install-btn{background:var(--green);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:11px;cursor:pointer;white-space:nowrap;}
+.install-close{background:none;border:none;font-size:13px;color:var(--text3);cursor:pointer;}
+
+/* Print */
+@media print{
+  .app-header,.tab-bar,.settings-strip,.info-bar,.install-banner{display:none!important;}
+  .panel{display:block!important;}
+  #panel-roster,#panel-timeline{display:none!important;}
+  .content{overflow:visible;padding:0;}
+  .main-grid{grid-template-columns:200px 1fr!important;}
+  .avail-btn{display:none!important;}
+  body,html{background:#fff!important;color:#000!important;}
+  .slot-card{break-inside:avoid;border:1px solid #ccc!important;margin-bottom:6px;background:#fff!important;}
+  .worker-chip{background:#fff!important;border:0.5px solid #ccc!important;}
+  .print-hdr{display:block!important;}
+}
+.print-hdr{display:none;margin-bottom:14px;}
+.print-hdr h1{font-size:18px;font-weight:700;color:#000;}
+.print-hdr p{font-size:12px;color:#555;margin-top:3px;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="app-header">
+    <div class="header-inner">
+      <div>
+        <div class="app-title">Shift Scheduler</div>
+        <div class="app-subtitle">Concrete Finishing Crew · 10-hr rest enforced</div>
+      </div>
+      <div class="header-actions">
+        <button class="hdr-btn" onclick="exportCSV()">CSV</button>
+        <button class="hdr-btn" onclick="printSchedule()">Print / PDF</button>
+        <button class="hdr-btn" onclick="sendWhatsApp()">📱 WhatsApp</button>
+        <button class="dm-toggle" id="dmToggle" onclick="toggleDark()" title="Toggle dark mode" aria-label="Toggle dark mode">
+          <span class="dm-icon" id="iconSun">☀️</span>
+          <span class="dm-icon" id="iconMoon">🌙</span>
+        </button>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab active" onclick="showTab('schedule',this)">Schedule</div>
+      <div class="tab" onclick="showTab('roster',this)">Roster</div>
+      <div class="tab" onclick="showTab('timeline',this)">Timeline</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <div class="install-banner" id="installBanner" style="display:none;">
+      <p><strong>Install as app</strong> — add to home screen or Windows taskbar for offline use.</p>
+      <button class="install-btn" id="installBtn">Install</button>
+      <button class="install-close" onclick="document.getElementById('installBanner').style.display='none'">✕</button>
+    </div>
+
+    <!-- SCHEDULE -->
+    <div class="panel active" id="panel-schedule">
+      <div class="print-hdr">
+        <h1>Concrete Finisher Shift Schedule</h1>
+        <p id="printDate"></p>
+      </div>
+      <div class="settings-strip">
+        <div class="ctrl-card">
+          <label>Add worker</label>
+          <div class="ctrl-row"><input id="newWorker" placeholder="Full name"/><button class="add-btn" onclick="addWorker()">+</button></div>
+        </div>
+        <div class="ctrl-card">
+          <label>Add time slot</label>
+          <div class="ctrl-row"><input type="time" id="newSlotTime" value="14:00"/><button class="add-btn" onclick="addSlot()">+</button></div>
+        </div>
+      </div>
+      <div class="main-grid">
+        <div>
+          <p class="section-head">Crew <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:9px;"> · tap ✓ to mark out</span></p>
+          <div class="crew-grid">
+            <div class="crew-pool" id="crewPool1"></div>
+            <div class="crew-pool" id="crewPool2"></div>
+          </div>
+        </div>
+        <div>
+          <p class="section-head">Time Slots</p>
+          <div class="slots-col" id="slotsCol"></div>
+        </div>
+      </div>
+      <div class="info-bar" id="infoBar"></div>
+    </div>
+
+    <!-- ROSTER -->
+    <div class="panel" id="panel-roster">
+      <input class="roster-search" id="rosterSearch" placeholder="Search crew..." oninput="renderRoster()"/>
+      <div class="roster-grid" id="rosterGrid"></div>
+    </div>
+
+    <!-- TIMELINE -->
+    <div class="panel" id="panel-timeline">
+      <div class="tl-wrap">
+        <div class="tl-hdr" id="tlHdr"></div>
+        <div id="tlRows"></div>
+        <div class="legend">
+          <span><span class="leg-sq" style="background:#1D9E75;"></span>On shift</span>
+          <span><span class="leg-sq" style="background:#FAC775;"></span>Rest (10 hr)</span>
+          <span><span class="leg-sq" style="background:var(--surface2);"></span>Available</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const COLORS=["#1D9E75","#378ADD","#D85A30","#7F77DD","#BA7517","#D4537E","#639922","#5F5E5A","#0F6E56","#185FA5","#993C1D","#3C3489"];
+const SHIFT_MINS=600, REST_MINS=600;
+
+const FN=["James","John","Robert","Michael","William","David","Richard","Joseph","Thomas","Charles","Chris","Daniel","Matthew","Anthony","Mark","Donald","Steven","Paul","Andrew","Joshua","Kenneth","Kevin","Brian","George","Timothy","Ronald","Edward","Jason","Jeffrey","Ryan","Gary","Jacob","Nicholas","Eric","Jonathan","Stephen","Larry","Justin","Scott","Brandon","Benjamin","Samuel","Raymond","Gregory","Frank","Alexander","Patrick","Jack","Dennis","Jerry"];
+const LN=["Smith","Johnson","Williams","Brown","Jones","Garcia","Miller","Davis","Martinez","Hernandez","Lopez","Gonzalez","Wilson","Anderson","Thomas","Taylor","Moore","Jackson","Martin","Lee","Perez","Thompson","White","Harris","Sanchez","Clark","Lewis","Robinson","Walker","Young","Allen","King","Wright","Scott","Torres","Nguyen","Hill","Flores","Green","Adams","Nelson","Baker","Hall","Rivera","Campbell","Mitchell","Carter","Roberts","Turner","Phillips"];
+
+function defaultWorkers(){
+  return Array.from({length:60},(_,i)=>({
+    name:`${FN[i%FN.length]} ${LN[((Math.floor(i/FN.length)*7)+i%7)%LN.length]}`,
+    phone:'',
+    unavailable:false
+  }));
+}
+
+function load(){try{const s=localStorage.getItem('shiftV4');return s?JSON.parse(s):null;}catch{return null;}}
+function save(){try{localStorage.setItem('shiftV4',JSON.stringify(st));}catch{}}
+
+let st=load()||{
+  workers:defaultWorkers(),
+  slots:[{time:"06:00",desc:""},{time:"08:00",desc:""},{time:"10:00",desc:""},{time:"14:00",desc:""},{time:"18:00",desc:""}],
+  assignments:{},
+  darkMode:false
+};
+st.workers.forEach(w=>{if(w.unavailable===undefined)w.unavailable=false;if(w.phone===undefined)w.phone='';});
+if(st.darkMode===undefined)st.darkMode=false;
+
+// ── Dark mode ────────────────────────────────────────────────────────────
+function applyTheme(){
+  document.documentElement.setAttribute('data-theme', st.darkMode?'dark':'light');
+  document.getElementById('iconSun').classList.toggle('active',!st.darkMode);
+  document.getElementById('iconMoon').classList.toggle('active',st.darkMode);
+  document.getElementById('themeColorMeta').content=st.darkMode?'#141412':'#1D9E75';
+}
+function toggleDark(){
+  st.darkMode=!st.darkMode;
+  applyTheme();
+  save();
+}
+applyTheme();
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function tMin(t){const[h,m]=t.split(":").map(Number);return h*60+m;}
+function tStr(m){m=((m%1440)+1440)%1440;const h=Math.floor(m/60)%24,mn=m%60,ap=h>=12?"PM":"AM",hd=h%12||12;return `${hd}:${mn<10?"0":""}${mn} ${ap}`;}
+function wColor(n){let h=0;for(let i=0;i<n.length;i++)h=(h*31+n.charCodeAt(i))&0xffff;return COLORS[h%COLORS.length];}
+function wSlot(n){for(const t in st.assignments)if(st.assignments[t]?.includes(n))return t;return null;}
+function autoH(el){el.style.height="auto";el.style.height=Math.max(10,el.scrollHeight)+"px";}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────
+function showTab(id,el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  el.classList.add('active');
+  if(id==='timeline')renderTL();
+  if(id==='roster')renderRoster();
+}
+
+// ── Mutations ─────────────────────────────────────────────────────────────
+function addWorker(){const i=document.getElementById('newWorker');const n=i.value.trim();if(!n||st.workers.find(w=>w.name===n))return;st.workers.push({name:n,phone:'',unavailable:false});i.value='';save();render();}
+function addWorkerWithPhone(){const nameInput=document.getElementById('newWorkerName');const phoneInput=document.getElementById('newWorkerPhone');const n=nameInput.value.trim();const p=phoneInput.value.trim();if(!n||st.workers.find(w=>w.name===n))return;st.workers.push({name:n,phone:p,unavailable:false});nameInput.value='';phoneInput.value='';save();render();}
+function updateWorkerPhone(name,phone){const w=st.workers.find(x=>x.name===name);if(w){w.phone=phone;save();}}
+function updateWorkerName(oldName,newName){const n=newName.trim();if(!n||n===oldName)return;const w=st.workers.find(x=>x.name===oldName);if(w){w.name=n;save();render();}}
+function addSlot(){const t=document.getElementById('newSlotTime').value;if(!t||st.slots.find(s=>s.time===t))return;st.slots.push({time:t,desc:''});st.slots.sort((a,b)=>tMin(a.time)-tMin(b.time));save();render();}
+function removeSlot(t){st.slots=st.slots.filter(s=>s.time!==t);delete st.assignments[t];save();render();}
+function toggleAvail(name){const w=st.workers.find(x=>x.name===name);if(w){w.unavailable=!w.unavailable;save();render();}}
+
+// ── Drag ──────────────────────────────────────────────────────────────────
+let dW=null,dFS=null,tGhost=null;
+
+// ── Render ────────────────────────────────────────────────────────────────
+function render(){renderPools();renderSlots();renderInfoBar();}
+
+function renderPools(){
+  const p1=document.getElementById('crewPool1'),p2=document.getElementById('crewPool2');
+  p1.innerHTML='';p2.innerHTML='';
+  const half=Math.ceil(st.workers.length/2);
+
+  function chip(w,pool){
+    const slot=wSlot(w.name),assigned=slot!==null;
+    const el=document.createElement('div');
+    el.className='worker-chip'+(w.unavailable?' unavailable':assigned?' assigned':'');
+    el.draggable=!w.unavailable&&!assigned;
+    const col=wColor(w.name);
+    el.innerHTML=`<span class="chip-dot" style="background:${w.unavailable?'var(--red)':assigned?'var(--text3)':col};"></span><span class="chip-name">${w.name}</span>${assigned&&!w.unavailable?`<span class="chip-tag">${tStr(tMin(slot))}</span>`:''}`;
+    const av=document.createElement('span');
+    av.className='avail-btn'+(w.unavailable?' out':'');
+    av.title=w.unavailable?'Mark available':'Mark out / sick';
+    av.textContent=w.unavailable?'✕':'✓';
+    av.addEventListener('click',e=>{e.stopPropagation();toggleAvail(w.name);});
+    el.appendChild(av);
+    if(!w.unavailable&&!assigned){
+      el.addEventListener('dragstart',e=>{dW=w.name;dFS=null;setTimeout(()=>el.classList.add('dragging'),0);e.dataTransfer.effectAllowed='move';});
+      el.addEventListener('dragend',()=>el.classList.remove('dragging'));
+      el.addEventListener('touchstart',e=>ts(e,w.name,null),{passive:true});
+    }
+    pool.appendChild(el);
+  }
+
+  st.workers.slice(0,half).forEach(w=>chip(w,p1));
+  st.workers.slice(half).forEach(w=>chip(w,p2));
+
+  [p1,p2].forEach(pool=>{
+    pool.addEventListener('dragover',e=>{if(dFS!==null){e.preventDefault();pool.classList.add('drop-target');}});
+    pool.addEventListener('dragleave',()=>pool.classList.remove('drop-target'));
+    pool.addEventListener('drop',e=>{e.preventDefault();pool.classList.remove('drop-target');if(dW&&dFS!==null){st.assignments[dFS]=st.assignments[dFS].filter(n=>n!==dW);dW=null;dFS=null;save();render();}});
+    pool.addEventListener('touchend',e=>tdPool(e,pool),{passive:false});
+  });
+}
+
+function renderSlots(){
+  const col=document.getElementById('slotsCol');col.innerHTML='';
+  st.slots.forEach(s=>{
+    const asgn=st.assignments[s.time]||[];
+    const outAsgn=asgn.filter(n=>{const w=st.workers.find(x=>x.name===n);return w&&w.unavailable;});
+    const card=document.createElement('div');card.className='slot-card';
+
+    const ta=document.createElement('textarea');ta.className='slot-desc';ta.placeholder='add task description...';ta.value=s.desc||'';
+    ta.addEventListener('input',()=>{s.desc=ta.value;autoH(ta);save();});
+    ta.addEventListener('dragover',e=>e.stopPropagation());ta.addEventListener('drop',e=>e.stopPropagation());
+    card.appendChild(ta);
+
+    const hdr=document.createElement('div');hdr.className='slot-header';
+    hdr.innerHTML=`<span class="slot-time">${tStr(tMin(s.time))}${outAsgn.length?`<span class="unavail-warn">⚠ ${outAsgn.length} out</span>`:''}</span><button class="slot-rm" onclick="removeSlot('${s.time}')">✕</button>`;
+    card.appendChild(hdr);
+
+    const area=document.createElement('div');area.className='slot-workers'+(asgn.length===0?' empty':'');
+    asgn.forEach(n=>{
+      const w=st.workers.find(x=>x.name===n);const isOut=w&&w.unavailable;const c=wColor(n);
+      const pill=document.createElement('div');pill.className='assigned-pill'+(isOut?' out-pill':'');pill.draggable=true;
+      pill.innerHTML=`<span class="chip-dot" style="background:${isOut?'var(--red)':c};"></span><span>${n}${isOut?' ⚠':''}</span>`;
+      pill.addEventListener('dragstart',e=>{dW=n;dFS=s.time;setTimeout(()=>pill.classList.add('dragging'),0);e.dataTransfer.effectAllowed='move';});
+      pill.addEventListener('dragend',()=>pill.classList.remove('dragging'));
+      pill.addEventListener('touchstart',e=>ts(e,n,s.time),{passive:true});
+      area.appendChild(pill);
+    });
+    card.appendChild(area);
+
+    card.addEventListener('dragover',e=>{e.preventDefault();card.classList.add('drag-over');});
+    card.addEventListener('dragleave',()=>card.classList.remove('drag-over'));
+    card.addEventListener('drop',e=>{
+      e.preventDefault();card.classList.remove('drag-over');if(!dW)return;
+      const w=st.workers.find(x=>x.name===dW);if(w&&w.unavailable)return;
+      if(dFS)st.assignments[dFS]=st.assignments[dFS].filter(n=>n!==dW);
+      if(!st.assignments[s.time])st.assignments[s.time]=[];
+      if(!st.assignments[s.time].includes(dW))st.assignments[s.time].push(dW);
+      dW=null;dFS=null;save();render();
+    });
+    card.addEventListener('touchend',e=>tdSlot(e,card,s.time),{passive:false});
+    col.appendChild(card);if(s.desc)autoH(ta);
+  });
+}
+
+function renderInfoBar(){
+  const total=st.workers.filter(w=>wSlot(w.name)&&!w.unavailable).length;
+  const out=st.workers.filter(w=>w.unavailable).length;
+  const unassigned=st.workers.filter(w=>!wSlot(w.name)&&!w.unavailable).length;
+  document.getElementById('infoBar').innerHTML=
+    `<strong>${total}</strong> workers on schedule · <strong style="color:var(--red)">${out}</strong> marked out · <strong>${unassigned}</strong> available & unassigned`;
+}
+
+function renderTL(){
+  const hdr=document.getElementById('tlHdr');hdr.innerHTML='';
+  for(let h=0;h<24;h+=3){const el=document.createElement('div');el.className='tl-hr';const ap=h>=12?'PM':'AM',hd=h%12||12;el.textContent=hd+ap;hdr.appendChild(el);}
+  const rows=document.getElementById('tlRows');rows.innerHTML='';const DAY=1440;
+  const asgnd=st.workers.filter(w=>wSlot(w.name)&&!w.unavailable);
+  if(!asgnd.length){const e=document.createElement('div');e.className='tl-empty';e.textContent='Assign workers to slots to see the timeline.';rows.appendChild(e);return;}
+  asgnd.forEach(w=>{
+    const start=tMin(wSlot(w.name)),color=wColor(w.name);
+    const row=document.createElement('div');row.className='tl-row';
+    const lbl=document.createElement('div');lbl.className='tl-label';lbl.textContent=w.name;
+    const track=document.createElement('div');track.className='tl-track';
+    function addBar(s,len,col){let rem=len,off=((s%DAY)+DAY)%DAY;while(rem>0){const chunk=Math.min(rem,DAY-off);const bar=document.createElement('div');bar.className='tl-bar';bar.style.left=(off/DAY*100).toFixed(2)+'%';bar.style.width=(chunk/DAY*100).toFixed(2)+'%';bar.style.background=col;track.appendChild(bar);rem-=chunk;off=0;}}
+    addBar(start,SHIFT_MINS,color);addBar(start+SHIFT_MINS,REST_MINS,'#FAC775');
+    row.appendChild(lbl);row.appendChild(track);rows.appendChild(row);
+  });
+}
+
+function renderRoster(){
+  const q=(document.getElementById('rosterSearch')?.value||'').toLowerCase();
+  const grid=document.getElementById('rosterGrid');grid.innerHTML='';
+  
+  // Add new worker section
+  const addSection=document.createElement('div');
+  addSection.style.cssText='grid-column:1/-1;margin-bottom:10px;';
+  addSection.innerHTML=`<div class="ctrl-card"><label>Add New Worker</label><div class="ctrl-row"><input id="newWorkerName" placeholder="Full name"/><input id="newWorkerPhone" placeholder="Phone (optional)"/><button class="add-btn" onclick="addWorkerWithPhone()">+</button></div></div>`;
+  grid.appendChild(addSection);
+  
+  st.workers.filter(w=>!q||w.name.toLowerCase().includes(q)).forEach(w=>{
+    const slot=wSlot(w.name);
+    const chip=document.createElement('div');
+    chip.className='roster-chip'+(w.unavailable?' is-out':slot?' is-assigned':'')
+    chip.style.cssText='flex-direction:column;align-items:flex-start;gap:4px;padding:8px;';
+    const col=wColor(w.name);
+    
+    const topRow=document.createElement('div');
+    topRow.style.cssText='display:flex;align-items:center;width:100%;gap:5px;';
+    topRow.innerHTML=`<span class="chip-dot" style="background:${w.unavailable?'var(--red)':slot?col:'var(--text3)'};"></span><input type="text" value="${w.name}" style="flex:1;font-size:12px;font-weight:600;padding:2px 4px;border:0.5px solid transparent;border-radius:4px;background:transparent;" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='transparent';updateWorkerName('${w.name}',this.value)"/>`;
+    
+    if(slot&&!w.unavailable){const tag=document.createElement('span');tag.className='roster-slot-tag';tag.textContent=tStr(tMin(slot));topRow.appendChild(tag);}
+    
+    const btn=document.createElement('button');
+    btn.className='mark-btn '+(w.unavailable?'mark-in':'mark-out');
+    btn.textContent=w.unavailable?'Mark in':'Mark out';
+    btn.addEventListener('click',()=>toggleAvail(w.name));
+    topRow.appendChild(btn);
+    
+    chip.appendChild(topRow);
+    
+    // Phone input
+    const phoneRow=document.createElement('div');
+    phoneRow.style.cssText='display:flex;width:100%;gap:5px;margin-top:4px;';
+    phoneRow.innerHTML=`<input type="tel" placeholder="Phone #" value="${w.phone||''}" style="flex:1;font-size:11px;padding:4px 8px;border:0.5px solid var(--border2);border-radius:4px;background:var(--surface2);" onchange="updateWorkerPhone('${w.name}',this.value)"/>`;
+    chip.appendChild(phoneRow);
+    
+    grid.appendChild(chip);
+  });
+}
+
+// ── Touch drag ────────────────────────────────────────────────────────────
+function ts(e,name,fromSlot){
+  dW=name;dFS=fromSlot;const t=e.touches[0];
+  if(tGhost)tGhost.remove();
+  tGhost=document.createElement('div');tGhost.textContent=name;
+  tGhost.style.cssText=`position:fixed;z-index:9999;pointer-events:none;background:#1D9E75;color:#fff;padding:4px 10px;border-radius:4px;font-size:12px;opacity:.92;left:${t.clientX-30}px;top:${t.clientY-14}px;font-family:system-ui;`;
+  document.body.appendChild(tGhost);
+  document.addEventListener('touchmove',tm,{passive:false});
+  document.addEventListener('touchend',te,{passive:false});
+}
+function tm(e){e.preventDefault();const t=e.touches[0];if(tGhost){tGhost.style.left=(t.clientX-30)+'px';tGhost.style.top=(t.clientY-14)+'px';}}
+function tdSlot(e,card,slotTime){
+  if(!dW)return;const t=e.changedTouches[0];const el=document.elementFromPoint(t.clientX,t.clientY);
+  if(card.contains(el)||el===card){
+    e.preventDefault();const w=st.workers.find(x=>x.name===dW);if(w&&w.unavailable){ft();return;}
+    if(dFS)st.assignments[dFS]=st.assignments[dFS].filter(n=>n!==dW);
+    if(!st.assignments[slotTime])st.assignments[slotTime]=[];
+    if(!st.assignments[slotTime].includes(dW))st.assignments[slotTime].push(dW);
+    ft();
+  }
+}
+function tdPool(e,pool){
+  if(!dW||!dFS)return;const t=e.changedTouches[0];const el=document.elementFromPoint(t.clientX,t.clientY);
+  if(pool.contains(el)||el===pool){e.preventDefault();st.assignments[dFS]=st.assignments[dFS].filter(n=>n!==dW);ft();}
+}
+function te(){ft();}
+function ft(){if(tGhost){tGhost.remove();tGhost=null;}document.removeEventListener('touchmove',tm);document.removeEventListener('touchend',te);dW=null;dFS=null;save();render();}
+
+// ── Export / Print ────────────────────────────────────────────────────────
+function exportCSV(){
+  let csv='Time Slot,Task Description,Workers Assigned,Workers Out\n';
+  st.slots.forEach(s=>{
+    const all=st.assignments[s.time]||[];
+    const avail=all.filter(n=>{const w=st.workers.find(x=>x.name===n);return !w||!w.unavailable;});
+    const out=all.filter(n=>{const w=st.workers.find(x=>x.name===n);return w&&w.unavailable;});
+    csv+=`"${tStr(tMin(s.time))}","${(s.desc||'').replace(/"/g,'""')}","${avail.join(' | ')}","${out.join(' | ')}"\n`;
+  });
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='shift_schedule.csv';a.click();
+}
+function printSchedule(){
+  document.getElementById('printDate').textContent='Printed: '+new Date().toLocaleDateString(undefined,{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-schedule').classList.add('active');
+  setTimeout(()=>window.print(),120);
+}
+
+// ── WhatsApp ──────────────────────────────────────────────────────────────
+function sendWhatsApp(){
+  const date=new Date().toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
+  let msg='*Shift Schedule - ' + date + '*\n\n';
+  
+  st.slots.forEach(s=>{
+    const workers=st.assignments[s.time]||[];
+    if(workers.length>0){
+      const avail=workers.filter(n=>{const w=st.workers.find(x=>x.name===n);return !w||!w.unavailable;});
+      const out=workers.filter(n=>{const w=st.workers.find(x=>x.name===n);return w&&w.unavailable;});
+      
+      msg+='*' + tStr(tMin(s.time)) + '*\n';
+      if(s.desc)msg+=s.desc + '\n';
+      
+      // Workers with phone numbers
+      if(avail.length){
+        msg+='Workers: ';
+        avail.forEach((n,i)=>{
+          const w=st.workers.find(x=>x.name===n);
+          msg+=n;
+          if(w&&w.phone)msg+=' (' + w.phone + ')';
+          if(i<avail.length-1)msg+=', ';
+        });
+        msg+='\n';
+      }
+      
+      if(out.length)msg+='OUT: ' + out.join(', ') + '\n';
+      msg+='\n';
+    }
+  });
+  
+  const total=st.workers.filter(w=>wSlot(w.name)&&!w.unavailable).length;
+  const outCount=st.workers.filter(w=>w.unavailable).length;
+  msg+='Total on shift: ' + total + ' | Out: ' + outCount;
+  
+  const encoded=encodeURIComponent(msg);
+  window.open('https://wa.me/?text=' + encoded,'_blank');
+}
+
+// ── PWA install ───────────────────────────────────────────────────────────
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();deferredPrompt=e;
+  document.getElementById('installBanner').style.display='flex';
+  document.getElementById('installBtn').addEventListener('click',()=>{
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(()=>{document.getElementById('installBanner').style.display='none';deferredPrompt=null;});
+  });
+});
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+
+render();
+</script>
+</body>
+</html>
