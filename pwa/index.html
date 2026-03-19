@@ -422,8 +422,22 @@ function addWorkerWithPhone(){const nameInput=document.getElementById('newWorker
 function updateWorkerPhone(name,phone){const w=st.workers.find(x=>x.name===name);if(w){w.phone=phone;save();}}
 function updateWorkerName(oldName,newName){const n=newName.trim();if(!n||n===oldName)return;const w=st.workers.find(x=>x.name===oldName);if(w){w.name=n;save();render();}}
 function deleteWorker(name){if(!confirm('Delete '+name+' from the roster?\n\nThis cannot be undone.\n\nAre you sure?'))return;st.workers=st.workers.filter(w=>w.name!==name);for(const t in st.assignments){st.assignments[t]=st.assignments[t].filter(n=>n!==name);if(st.assignments[t].length===0)delete st.assignments[t];}save();render();}
-function clearAllData(){if(!confirm('Clear all schedule assignments?\n\nWorkers will remain but be unassigned from all time slots.'))return;st.assignments={};save();render();alert('Schedule cleared! All workers are now unassigned.');}
-function deleteAllWorkers(){if(!confirm('⚠️ WARNING: This will delete ALL workers from the roster.\n\nThis cannot be undone.\n\nAre you sure?'))return;if(!confirm('Are you absolutely sure?'))return;st.workers=[];st.assignments={};save();render();alert('All workers deleted!');}
+function clearAllData(){
+  if(!confirm('Clear all schedule assignments?\n\nWorkers will remain but be unassigned from all time slots.'))return;
+  st.assignments={};
+  save();
+  render();
+  setTimeout(function(){alert('Schedule cleared! All workers are now unassigned.');},100);
+}
+function deleteAllWorkers(){
+  if(!confirm('⚠️ WARNING: This will delete ALL workers from the roster.\n\nThis cannot be undone.\n\nAre you sure?'))return;
+  if(!confirm('Are you absolutely sure?'))return;
+  st.workers=[];
+  st.assignments={};
+  save();
+  render();
+  setTimeout(function(){alert('All workers deleted!');},100);
+}
 function addSlot(){const t=document.getElementById('newSlotTime').value;if(!t||st.slots.find(s=>s.time===t))return;st.slots.push({time:t,desc:''});st.slots.sort((a,b)=>tMin(a.time)-tMin(b.time));save();render();}
 function removeSlot(t){st.slots=st.slots.filter(s=>s.time!==t);delete st.assignments[t];save();render();}
 function toggleAvail(name){const w=st.workers.find(x=>x.name===name);if(w){w.unavailable=!w.unavailable;save();render();}}
