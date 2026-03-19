@@ -288,13 +288,13 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
         <div style="background:var(--surface2);padding:15px;border-radius:8px;margin-bottom:15px;">
           <h3 style="margin-bottom:10px;">Clear Schedule</h3>
           <p style="font-size:12px;color:var(--text2);margin-bottom:10px;">Unassign all workers from time slots. Workers remain in roster.</p>
-          <button class="hdr-btn" style="background:var(--amber);color:#000;" onclick="clearAllData()">🗑️ Clear Schedule</button>
+          <button class="hdr-btn" style="background:var(--amber);color:#000;" onclick="clearAllData()" ontouchstart="clearAllData()">🗑️ Clear Schedule</button>
         </div>
         
         <div style="background:var(--surface2);padding:15px;border-radius:8px;margin-bottom:15px;">
           <h3 style="margin-bottom:10px;">Delete All Workers</h3>
           <p style="font-size:12px;color:var(--text2);margin-bottom:10px;">Remove all workers from roster. This cannot be undone.</p>
-          <button class="hdr-btn" style="background:var(--red);color:#fff;" onclick="deleteAllWorkers()">⚠️ Delete All Workers</button>
+          <button class="hdr-btn" style="background:var(--red);color:#fff;" onclick="deleteAllWorkers()" ontouchstart="deleteAllWorkers()">⚠️ Delete All Workers</button>
         </div>
         
         <div style="background:var(--surface2);padding:15px;border-radius:8px;margin-bottom:15px;">
@@ -423,10 +423,16 @@ function updateWorkerPhone(name,phone){const w=st.workers.find(x=>x.name===name)
 function updateWorkerName(oldName,newName){const n=newName.trim();if(!n||n===oldName)return;const w=st.workers.find(x=>x.name===oldName);if(w){w.name=n;save();render();}}
 function deleteWorker(name){if(!confirm('Delete '+name+' from the roster?\n\nThis cannot be undone.\n\nAre you sure?'))return;st.workers=st.workers.filter(w=>w.name!==name);for(const t in st.assignments){st.assignments[t]=st.assignments[t].filter(n=>n!==name);if(st.assignments[t].length===0)delete st.assignments[t];}save();render();}
 function clearAllData(){
-  if(!confirm('Clear all schedule assignments?\n\nWorkers will remain but be unassigned from all time slots.'))return;
+  console.log('clearAllData called');
+  if(!confirm('Clear all schedule assignments?\n\nWorkers will remain but be unassigned from all time slots.')){
+    console.log('User cancelled');
+    return;
+  }
+  console.log('Clearing assignments...');
   st.assignments={};
   save();
   render();
+  console.log('Done, showing alert...');
   setTimeout(function(){alert('Schedule cleared! All workers are now unassigned.');},100);
 }
 function deleteAllWorkers(){
