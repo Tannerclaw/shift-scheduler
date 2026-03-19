@@ -204,7 +204,7 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
       <div class="header-actions">
         <button class="hdr-btn" onclick="exportCSV()">CSV</button>
         <button class="hdr-btn" onclick="printSchedule()">Print / PDF</button>
-        <button class="hdr-btn" onclick="sendWhatsApp()">Message</button>
+        <button class="hdr-btn" onclick="sendWhatsApp()">Send All</button>
         <button class="dm-toggle" id="dmToggle" onclick="toggleDark()" title="Toggle dark mode" aria-label="Toggle dark mode">
           <span class="dm-icon" id="iconSun">☀️</span>
           <span class="dm-icon" id="iconMoon">🌙</span>
@@ -543,17 +543,24 @@ function renderInfoBar(){
 
 function renderTL(){
   const hdr=document.getElementById('tlHdr');hdr.innerHTML='';
-  for(let h=0;h<24;h+=3){const el=document.createElement('div');el.className='tl-hr';const ap=h>=12?'PM':'AM',hd=h%12||12;el.textContent=hd+ap;hdr.appendChild(el);}
+  for(let h=0;h<=24;h+=3){const el=document.createElement('div');el.className='tl-hr';const ap=h>=12&&h<24?'PM':'AM',hd=h%12||12;el.textContent=h===24?'12 AM':hd+' '+ap;hdr.appendChild(el);}
   const rows=document.getElementById('tlRows');rows.innerHTML='';const DAY=1440;
   const asgnd=st.workers.filter(w=>wSlot(w.name)&&!w.unavailable);
   if(!asgnd.length){const e=document.createElement('div');e.className='tl-empty';e.textContent='Assign workers to slots to see the timeline.';rows.appendChild(e);return;}
-  asgnd.forEach(w=>{
-    const start=tMin(wSlot(w.name)),color=wColor(w.name);
+  asgnd.forEach((w,i)=>{
+    const start=tMin(wSlot(w.name));
     const row=document.createElement('div');row.className='tl-row';
     const lbl=document.createElement('div');lbl.className='tl-label';lbl.textContent=w.name;
     const track=document.createElement('div');track.className='tl-track';
+    // Add hour tick marks
+    for(let h=1;h<24;h++){
+      const tick=document.createElement('div');
+      tick.style.cssText='position:absolute;top:0;bottom:0;width:1px;background:var(--text3);left:'+(h/24*100).toFixed(2)+'%;';
+      if(h%2===0)tick.style.background='var(--text2)';
+      track.appendChild(tick);
+    }
     function addBar(s,len,col){let rem=len,off=((s%DAY)+DAY)%DAY;while(rem>0){const chunk=Math.min(rem,DAY-off);const bar=document.createElement('div');bar.className='tl-bar';bar.style.left=(off/DAY*100).toFixed(2)+'%';bar.style.width=(chunk/DAY*100).toFixed(2)+'%';bar.style.background=col;track.appendChild(bar);rem-=chunk;off=0;}}
-    addBar(start,SHIFT_MINS,color);addBar(start+SHIFT_MINS,REST_MINS,'#FAC775');
+    addBar(start,SHIFT_MINS,'#1D9E75');addBar(start+SHIFT_MINS,REST_MINS,'#FAC775');
     row.appendChild(lbl);row.appendChild(track);rows.appendChild(row);
   });
 }
@@ -578,21 +585,22 @@ function renderRoster(){
     // Name row
     const nameRow=document.createElement('div');
     nameRow.style.cssText='display:flex;align-items:center;width:100%;gap:5px;overflow:hidden;';
-    nameRow.innerHTML=`<span class="chip-dot" style="background:${w.unavailable?'var(--red)':slot?col:'var(--text3)'};flex-shrink:0;"></span><input type="text" value="${w.name}" style="flex:1;min-width:0;font-size:13px;font-weight:600;padding:4px 6px;border:0.5px solid var(--border2);border-radius:4px;background:var(--surface2);box-sizing:border-box;" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--border2)';updateWorkerName('${w.name}',this.value)"/>`;
-    
-    if(slot&&!w.unavailable){const tag=document.createElement('span');tag.className='roster-slot-tag';tag.textContent=tStr(tMin(slot));tag.style.flexShrink='0';nameRow.appendChild(tag);}
+    nameRow.innerHTML=`<input type="text" value="${w.name}" style="flex:1;min-width:0;font-size:13px;font-weight:600;padding:4px 6px;border:0.5px solid var(--border2);border-radius:4px;background:var(--surface2);box-sizing:border-box;" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--border2)';updateWorkerName('${w.name}',this.value)"/>`;
     chip.appendChild(nameRow);
     
     // Buttons row
     const btnRow=document.createElement('div');
     btnRow.style.cssText='display:flex;gap:8px;width:100%;margin-top:4px;';
     
-    const btn=document.createElement('button');
-    btn.className='mark-btn '+(w.unavailable?'mark-in':'mark-out');
-    btn.style.cssText='flex:1;padding:6px 8px;font-size:11px;border-radius:4px;border-width:1px;';
-    btn.textContent=w.unavailable?'Mark in':'Mark out';
-    btn.addEventListener('click',()=>toggleAvail(w.name));
-    btnRow.appendChild(btn);
+    // Only show Mark out/in button if worker is NOT assigned to a shift
+    if(!slot){
+      const btn=document.createElement('button');
+      btn.className='mark-btn '+(w.unavailable?'mark-in':'mark-out');
+      btn.style.cssText='flex:1;padding:6px 8px;font-size:11px;border-radius:4px;border-width:1px;';
+      btn.textContent=w.unavailable?'Mark in':'Mark out';
+      btn.addEventListener('click',()=>toggleAvail(w.name));
+      btnRow.appendChild(btn);
+    }
     
     // Delete button
     const delBtn=document.createElement('button');
@@ -607,8 +615,8 @@ function renderRoster(){
     
     // Phone input
     const phoneRow=document.createElement('div');
-    phoneRow.style.cssText='display:flex;width:100%;gap:5px;margin-top:4px;';
-    phoneRow.innerHTML=`<input type="tel" placeholder="Phone #" value="${w.phone||''}" style="flex:1;font-size:11px;padding:4px 8px;border:0.5px solid var(--border2);border-radius:4px;background:var(--surface2);" onchange="updateWorkerPhone('${w.name}',this.value)"/>`;
+    phoneRow.style.cssText='display:flex;width:100%;gap:5px;margin-top:4px;overflow:hidden;';
+    phoneRow.innerHTML=`<input type="tel" placeholder="Phone #" value="${w.phone||''}" style="flex:1;min-width:0;font-size:11px;padding:4px 8px;border:0.5px solid var(--border2);border-radius:4px;background:var(--surface2);box-sizing:border-box;" onchange="updateWorkerPhone('${w.name}',this.value)"/>`;
     chip.appendChild(phoneRow);
     
     grid.appendChild(chip);
@@ -708,61 +716,38 @@ function printSchedule(){
 function sendWhatsApp(){
   if(st.workers.length===0){alert('No workers in roster!\n\nAdd workers in the Roster tab first.');return;}
   
-  const date=new Date().toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
-  let msg='*Shift Schedule - ' + date + '*\n\n';
+  const date=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+  let msg='*Start Times*\n' + date + '\n\n';
   
   // Show all time slots with assigned workers
   let hasAssignments=false;
   st.slots.forEach(s=>{
     const workers=st.assignments[s.time]||[];
-    if(workers.length>0){
+    const avail=workers.filter(n=>{const w=st.workers.find(x=>x.name===n);return !w||!w.unavailable;});
+    if(avail.length>0){
       hasAssignments=true;
-      const avail=workers.filter(n=>{const w=st.workers.find(x=>x.name===n);return !w||!w.unavailable;});
-      const out=workers.filter(n=>{const w=st.workers.find(x=>x.name===n);return w&&w.unavailable;});
-      
-      msg+='*' + tStr(tMin(s.time)) + '*\n';
-      if(s.desc)msg+=s.desc + '\n';
-      
-      if(avail.length){
-        msg+='Workers: ';
-        avail.forEach((n,i)=>{
-          const w=st.workers.find(x=>x.name===n);
-          msg+=n;
-          if(w&&w.phone)msg+=' (' + w.phone + ')';
-          if(i<avail.length-1)msg+=', ';
-        });
-        msg+='\n';
-      }
-      
-      if(out.length)msg+='OUT: ' + out.join(', ') + '\n';
+      msg+=tStr(tMin(s.time)).replace(' ','').toLowerCase()+'\n';
+      avail.forEach(n=>msg+=n+'\n');
       msg+='\n';
     }
   });
   
-  if(!hasAssignments)msg+='No workers assigned to shifts yet.\n\n';
-  
-  // Show all workers and their status
-  msg+='*All Workers*\n';
-  const available=st.workers.filter(w=>!w.unavailable);
-  const out=st.workers.filter(w=>w.unavailable);
-  
-  if(available.length){
-    msg+='Available: ';
-    available.forEach((w,i)=>{
-      const slot=wSlot(w.name);
-      msg+=w.name;
-      if(slot)msg+=' ('+tStr(tMin(slot))+')';
-      else msg+=' (unassigned)';
-      if(i<available.length-1)msg+=', ';
-    });
+  // Show off-work workers (not assigned to any shift and not marked unavailable)
+  const offWork=st.workers.filter(w=>!wSlot(w.name)&&!w.unavailable);
+  if(offWork.length>0){
+    msg+='*Off Work*\n';
+    offWork.forEach(w=>msg+=w.name+'\n');
     msg+='\n';
   }
   
-  if(out.length){
-    msg+='OUT: ' + out.map(w=>w.name).join(', ') + '\n';
-  }
+  const total=st.workers.length;
+  const onShift=st.workers.filter(w=>wSlot(w.name)&&!w.unavailable).length;
+  const out=st.workers.filter(w=>w.unavailable).length;
+  const off=total-onShift-out;
   
-  msg+='\nTotal: ' + st.workers.length + ' | On Shift: ' + st.workers.filter(w=>wSlot(w.name)&&!w.unavailable).length + ' | Out: ' + out.length;
+  msg+='Total: ' + total + ' On: ' + onShift;
+  if(out>0)msg+=' Out: ' + out;
+  if(off>0)msg+=' Off: ' + off;
   
   const encoded=encodeURIComponent(msg);
   window.open('https://wa.me/?text=' + encoded,'_blank');
@@ -773,29 +758,23 @@ function sendSlotToWhatsApp(slotTime){
   const workers=st.assignments[slotTime]||[];
   if(workers.length===0){alert('No workers assigned to '+tStr(tMin(slotTime))+'!');return;}
   
-  const date=new Date().toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
-  const slot=st.slots.find(s=>s.time===slotTime);
+  const date=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
   
-  let msg='*Shift - ' + date + '*\n';
-  msg+='*' + tStr(tMin(slotTime)) + '*\n';
-  if(slot&&slot.desc)msg+=slot.desc + '\n';
+  let msg='*Start Time*\n' + date + '\n\n';
+  msg+=tStr(tMin(slotTime)).replace(' ','').toLowerCase()+'\n';
   
   const avail=workers.filter(n=>{const w=st.workers.find(x=>x.name===n);return !w||!w.unavailable;});
   const out=workers.filter(n=>{const w=st.workers.find(x=>x.name===n);return w&&w.unavailable;});
   
-  if(avail.length){
-    msg+='Workers: ';
-    avail.forEach((n,i)=>{
-      const w=st.workers.find(x=>x.name===n);
-      msg+=n;
-      if(w&&w.phone)msg+=' (' + w.phone + ')';
-      if(i<avail.length-1)msg+=', ';
-    });
-    msg+='\n';
+  avail.forEach(n=>msg+=n+'\n');
+  
+  if(out.length){
+    msg+='\n*Out*\n';
+    out.forEach(n=>msg+=n+'\n');
   }
   
-  if(out.length)msg+='OUT: ' + out.join(', ') + '\n';
-  msg+='Total: ' + avail.length + ' | Out: ' + out.length;
+  msg+='\nTotal: ' + workers.length + ' On: ' + avail.length;
+  if(out.length>0)msg+=' Out: ' + out.length;
   
   const encoded=encodeURIComponent(msg);
   window.open('https://wa.me/?text=' + encoded,'_blank');
