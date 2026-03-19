@@ -204,7 +204,7 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
       <div class="header-actions">
         <button class="hdr-btn" onclick="exportCSV()">CSV</button>
         <button class="hdr-btn" onclick="printSchedule()">Print / PDF</button>
-        <button class="hdr-btn" onclick="sendWhatsApp()">📱 Message All Shifts</button>
+        <button class="hdr-btn" onclick="sendWhatsApp()">Message</button>
         <button class="dm-toggle" id="dmToggle" onclick="toggleDark()" title="Toggle dark mode" aria-label="Toggle dark mode">
           <span class="dm-icon" id="iconSun">☀️</span>
           <span class="dm-icon" id="iconMoon">🌙</span>
@@ -523,8 +523,8 @@ function renderSlots(){
     if(asgnCount>0){
       const waBtn=document.createElement('button');
       waBtn.className='hdr-btn';
-      waBtn.style.cssText='margin-top:8px;width:100%;font-size:11px;';
-      waBtn.textContent='📱 Send '+tStr(tMin(s.time))+' to Group';
+      waBtn.style.cssText='margin-top:8px;width:100%;background:var(--green);color:#fff;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;';
+      waBtn.textContent='Send';
       waBtn.onclick=()=>sendSlotToWhatsApp(s.time);
       card.appendChild(waBtn);
     }
