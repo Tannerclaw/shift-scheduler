@@ -308,9 +308,11 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
           <button class="hdr-btn" onclick="exportCSV()">📥 Export CSV</button>
         </div>
         
-        <div style="background:var(--surface2);padding:15px;border-radius:8px;">
-          <h3 style="margin-bottom:10px;">About</h3>
-          <p style="font-size:12px;color:var(--text2);">Shift Scheduler v1.0<br>Built for concrete finishing crews<br>WhatsApp integration included</p>
+        <div style="background:var(--surface2);padding:15px;border-radius:8px;margin-bottom:15px;">
+          <h3 style="margin-bottom:10px;">Current User</h3>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:10px;">Set your name to highlight yourself in the roster (grayed out).</p>
+          <input type="text" id="currentUserName" placeholder="Your name (e.g., Dan Richards)" style="width:100%;padding:8px;border:0.5px solid var(--border2);border-radius:6px;background:var(--surface);font-size:13px;" onchange="saveCurrentUser(this.value)"/>
+          <p id="currentUserDisplay" style="font-size:11px;color:var(--green);margin-top:8px;display:none;">✓ Current user set</p>
         </div>
         
         <div style="background:var(--surface2);padding:15px;border-radius:8px;">
@@ -616,15 +618,33 @@ function renderRoster(){
   
   st.workers.filter(w=>!q||w.name.toLowerCase().includes(q)).forEach(w=>{
     const slot=wSlot(w.name);
+    const isCurrentUser=st.currentUser&&w.name===st.currentUser;
     const chip=document.createElement('div');
-    chip.className='roster-chip'+(w.unavailable?' is-out':slot?' is-assigned':'')
-    chip.style.cssText='flex-direction:column;align-items:flex-start;gap:6px;padding:10px;';
+    
+    // Add special styling for current user
+    let chipClass='roster-chip'+(w.unavailable?' is-out':slot?' is-assigned':'');
+    if(isCurrentUser)chipClass+=' current-user';
+    chip.className=chipClass;
+    
+    // Gray out style for current user
+    if(isCurrentUser){
+      chip.style.cssText='flex-direction:column;align-items:flex-start;gap:6px;padding:10px;opacity:0.6;background:var(--surface3);border:2px dashed var(--text3);';
+    }else{
+      chip.style.cssText='flex-direction:column;align-items:flex-start;gap:6px;padding:10px;';
+    }
     const col=wColor(w.name);
     
     // Name row
     const nameRow=document.createElement('div');
     nameRow.style.cssText='display:flex;align-items:center;width:100%;gap:5px;overflow:hidden;';
-    nameRow.innerHTML=`<input type="text" value="${w.name}" style="flex:1;min-width:0;font-size:13px;font-weight:600;padding:4px 6px;border:0.5px solid var(--border2);border-radius:4px;background:var(--surface2);box-sizing:border-box;" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--border2)';updateWorkerName('${w.name}',this.value)"/>`;
+    
+    let nameHtml=`<input type="text" value="${w.name}" style="flex:1;min-width:0;font-size:13px;font-weight:600;padding:4px 6px;border:0.5px solid var(--border2);border-radius:4px;background:var(--surface2);box-sizing:border-box;" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--border2)';updateWorkerName('${w.name}',this.value)"/>`;
+    
+    if(isCurrentUser){
+      nameHtml+=`<span style="background:var(--text3);color:#fff;font-size:9px;padding:2px 6px;border-radius:3px;flex-shrink:0;font-weight:bold;">YOU</span>`;
+    }
+    
+    nameRow.innerHTML=nameHtml;
     chip.appendChild(nameRow);
     
     // Buttons row
@@ -979,6 +999,27 @@ function importContactsFromVCard(vcardText){
   return{added,skipped,total:contacts.length};
 }
 
+// ── Current User ──────────────────────────────────────────────────────────
+function saveCurrentUser(name){
+  if(!name.trim()){
+    delete st.currentUser;
+    document.getElementById('currentUserDisplay').style.display='none';
+  }else{
+    st.currentUser=name.trim();
+    document.getElementById('currentUserDisplay').style.display='block';
+  }
+  save();
+  render();
+}
+
+function loadCurrentUser(){
+  const input=document.getElementById('currentUserName');
+  if(input&&st.currentUser){
+    input.value=st.currentUser;
+    document.getElementById('currentUserDisplay').style.display='block';
+  }
+}
+
 // ── PWA install ───────────────────────────────────────────────────────────
 let deferredPrompt=null;
 window.addEventListener('beforeinstallprompt',e=>{
@@ -1005,6 +1046,7 @@ async function init() {
   }
   applyTheme();
   render();
+  loadCurrentUser();
 }
 
 init();
