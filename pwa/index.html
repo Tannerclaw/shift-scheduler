@@ -798,7 +798,7 @@ function sendTelegram(){
   if(st.workers.length===0){alert('No workers in roster!\n\nAdd workers in the Roster tab first.');return;}
   
   const date=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
-  let msg='Start Times%0A' + date + '%0A%0A';
+  let msg='Start Times\n' + date + '\n\n';
   
   // Show all time slots with assigned workers
   let hasAssignments=false;
@@ -807,18 +807,18 @@ function sendTelegram(){
     const avail=workers.filter(n=>{const w=st.workers.find(x=>x.name===n);return !w||!w.unavailable;});
     if(avail.length>0){
       hasAssignments=true;
-      msg+=tStr(tMin(s.time)).replace(' ','').toLowerCase()+'%0A';
-      avail.forEach(n=>msg+=n+'%0A');
-      msg+='%0A';
+      msg+=tStr(tMin(s.time)).replace(' ','').toLowerCase()+'\n';
+      avail.forEach(n=>msg+=n+'\n');
+      msg+='\n';
     }
   });
   
   // Show off-work workers
   const offWork=st.workers.filter(w=>!wSlot(w.name)&&!w.unavailable);
   if(offWork.length>0){
-    msg+='*Off Work*%0A';
-    offWork.forEach(w=>msg+=w.name+'%0A');
-    msg+='%0A';
+    msg+='*Off Work*\n';
+    offWork.forEach(w=>msg+=w.name+'\n');
+    msg+='\n';
   }
   
   const total=st.workers.length;
@@ -830,8 +830,14 @@ function sendTelegram(){
   if(out>0)msg+=' Out: ' + out;
   if(off>0)msg+=' Off: ' + off;
   
-  // Open Telegram with message
-  window.open('https://t.me/share/url?text=' + msg,'_blank');
+  // Copy message to clipboard and open Telegram
+  navigator.clipboard.writeText(msg).then(()=>{
+    alert('Schedule copied to clipboard! Opening Telegram...');
+    window.open('https://web.telegram.org/','_blank');
+  }).catch(()=>{
+    // Fallback - try Telegram share URL
+    window.open('https://t.me/share/url?url=&text=' + encodeURIComponent(msg),'_blank');
+  });
 }
 
 function sendSlotToTelegram(slotTime){
@@ -840,24 +846,30 @@ function sendSlotToTelegram(slotTime){
   
   const date=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
   
-  let msg='Start Time%0A' + date + '%0A%0A';
-  msg+=tStr(tMin(slotTime)).replace(' ','').toLowerCase()+'%0A';
+  let msg='Start Time\n' + date + '\n\n';
+  msg+=tStr(tMin(slotTime)).replace(' ','').toLowerCase()+'\n';
   
   const avail=workers.filter(n=>{const w=st.workers.find(x=>x.name===n);return !w||!w.unavailable;});
   const out=workers.filter(n=>{const w=st.workers.find(x=>x.name===n);return w&&w.unavailable;});
   
-  avail.forEach(n=>msg+=n+'%0A');
+  avail.forEach(n=>msg+=n+'\n');
   
   if(out.length){
-    msg+='%0A*Out*%0A';
-    out.forEach(n=>msg+=n+'%0A');
+    msg+='\n*Out*\n';
+    out.forEach(n=>msg+=n+'\n');
   }
   
-  msg+='%0ATotal: ' + workers.length + ' On: ' + avail.length;
+  msg+='\nTotal: ' + workers.length + ' On: ' + avail.length;
   if(out.length>0)msg+=' Out: ' + out.length;
   
-  // Open Telegram with message
-  window.open('https://t.me/share/url?text=' + msg,'_blank');
+  // Copy message to clipboard and open Telegram
+  navigator.clipboard.writeText(msg).then(()=>{
+    alert('Schedule copied to clipboard! Opening Telegram...');
+    window.open('https://web.telegram.org/','_blank');
+  }).catch(()=>{
+    // Fallback - try Telegram share URL
+    window.open('https://t.me/share/url?url=&text=' + encodeURIComponent(msg),'_blank');
+  });
 }
 
 // ── PWA install ───────────────────────────────────────────────────────────
