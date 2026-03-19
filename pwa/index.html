@@ -206,6 +206,7 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
         <button class="hdr-btn" onclick="printSchedule()">Print / PDF</button>
         <button class="hdr-btn" onclick="sendWhatsApp()">Send All</button>
         <button class="hdr-btn" onclick="sendTelegram()">Telegram</button>
+        <button class="hdr-btn" onclick="sendFeedback()" style="background:var(--amber);color:#000;">Feedback</button>
         <button class="dm-toggle" id="dmToggle" onclick="toggleDark()" title="Toggle dark mode" aria-label="Toggle dark mode">
           <span class="dm-icon" id="iconSun">☀️</span>
           <span class="dm-icon" id="iconMoon">🌙</span>
@@ -870,6 +871,20 @@ function sendSlotToTelegram(slotTime){
     // Fallback - try Telegram share URL
     window.open('https://t.me/share/url?url=&text=' + encodeURIComponent(msg),'_blank');
   });
+}
+
+// Send feedback email
+function sendFeedback(){
+  const subject = encodeURIComponent('Shift Scheduler Feedback');
+  const body = encodeURIComponent(
+    'Hi Tanner,\n\n' +
+    'I have feedback about the Shift Scheduler app:\n\n' +
+    '[Type your feedback here]\n\n' +
+    '---\n' +
+    'Sent from: ' + navigator.userAgent + '\n' +
+    'Date: ' + new Date().toLocaleString()
+  );
+  window.open('mailto:tanner@clawbox.us?subject=' + subject + '&body=' + body, '_blank');
 }
 
 // ── PWA install ───────────────────────────────────────────────────────────
