@@ -205,6 +205,7 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
         <button class="hdr-btn" onclick="exportCSV()">CSV</button>
         <button class="hdr-btn" onclick="printSchedule()">Print / PDF</button>
         <button class="hdr-btn" onclick="sendWhatsApp()">Send All</button>
+        <button class="hdr-btn" onclick="sendTelegram()">Telegram</button>
         <button class="dm-toggle" id="dmToggle" onclick="toggleDark()" title="Toggle dark mode" aria-label="Toggle dark mode">
           <span class="dm-icon" id="iconSun">☀️</span>
           <span class="dm-icon" id="iconMoon">🌙</span>
@@ -518,15 +519,27 @@ function renderSlots(){
     });
     card.addEventListener('touchend',e=>tdSlot(e,card,s.time),{passive:false});
     
-    // WhatsApp button for this specific time slot
+    // WhatsApp and Telegram buttons for this specific time slot
     const asgnCount=(st.assignments[s.time]||[]).length;
     if(asgnCount>0){
+      const btnRow=document.createElement('div');
+      btnRow.style.cssText='display:flex;gap:8px;margin-top:8px;width:100%;';
+      
       const waBtn=document.createElement('button');
       waBtn.className='hdr-btn';
-      waBtn.style.cssText='margin-top:8px;width:100%;background:var(--green);color:#fff;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;';
-      waBtn.textContent='Send';
+      waBtn.style.cssText='flex:1;background:var(--green);color:#fff;padding:6px 8px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;';
+      waBtn.textContent='WhatsApp';
       waBtn.onclick=()=>sendSlotToWhatsApp(s.time);
-      card.appendChild(waBtn);
+      btnRow.appendChild(waBtn);
+      
+      const tgBtn=document.createElement('button');
+      tgBtn.className='hdr-btn';
+      tgBtn.style.cssText='flex:1;background:#229ED9;color:#fff;padding:6px 8px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;';
+      tgBtn.textContent='Telegram';
+      tgBtn.onclick=()=>sendSlotToTelegram(s.time);
+      btnRow.appendChild(tgBtn);
+      
+      card.appendChild(btnRow);
     }
     
     col.appendChild(card);if(s.desc)autoH(ta);
@@ -778,6 +791,73 @@ function sendSlotToWhatsApp(slotTime){
   
   const encoded=encodeURIComponent(msg);
   window.open('https://wa.me/?text=' + encoded,'_blank');
+}
+
+// Send schedule to Telegram
+function sendTelegram(){
+  if(st.workers.length===0){alert('No workers in roster!\n\nAdd workers in the Roster tab first.');return;}
+  
+  const date=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+  let msg='Start Times%0A' + date + '%0A%0A';
+  
+  // Show all time slots with assigned workers
+  let hasAssignments=false;
+  st.slots.forEach(s=>{
+    const workers=st.assignments[s.time]||[];
+    const avail=workers.filter(n=>{const w=st.workers.find(x=>x.name===n);return !w||!w.unavailable;});
+    if(avail.length>0){
+      hasAssignments=true;
+      msg+=tStr(tMin(s.time)).replace(' ','').toLowerCase()+'%0A';
+      avail.forEach(n=>msg+=n+'%0A');
+      msg+='%0A';
+    }
+  });
+  
+  // Show off-work workers
+  const offWork=st.workers.filter(w=>!wSlot(w.name)&&!w.unavailable);
+  if(offWork.length>0){
+    msg+='*Off Work*%0A';
+    offWork.forEach(w=>msg+=w.name+'%0A');
+    msg+='%0A';
+  }
+  
+  const total=st.workers.length;
+  const onShift=st.workers.filter(w=>wSlot(w.name)&&!w.unavailable).length;
+  const out=st.workers.filter(w=>w.unavailable).length;
+  const off=total-onShift-out;
+  
+  msg+='Total: ' + total + ' On: ' + onShift;
+  if(out>0)msg+=' Out: ' + out;
+  if(off>0)msg+=' Off: ' + off;
+  
+  // Open Telegram with message
+  window.open('https://t.me/share/url?text=' + msg,'_blank');
+}
+
+function sendSlotToTelegram(slotTime){
+  const workers=st.assignments[slotTime]||[];
+  if(workers.length===0){alert('No workers assigned to '+tStr(tMin(slotTime))+'!');return;}
+  
+  const date=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+  
+  let msg='Start Time%0A' + date + '%0A%0A';
+  msg+=tStr(tMin(slotTime)).replace(' ','').toLowerCase()+'%0A';
+  
+  const avail=workers.filter(n=>{const w=st.workers.find(x=>x.name===n);return !w||!w.unavailable;});
+  const out=workers.filter(n=>{const w=st.workers.find(x=>x.name===n);return w&&w.unavailable;});
+  
+  avail.forEach(n=>msg+=n+'%0A');
+  
+  if(out.length){
+    msg+='%0A*Out*%0A';
+    out.forEach(n=>msg+=n+'%0A');
+  }
+  
+  msg+='%0ATotal: ' + workers.length + ' On: ' + avail.length;
+  if(out.length>0)msg+=' Out: ' + out.length;
+  
+  // Open Telegram with message
+  window.open('https://t.me/share/url?text=' + msg,'_blank');
 }
 
 // ── PWA install ───────────────────────────────────────────────────────────
