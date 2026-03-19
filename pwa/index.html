@@ -206,6 +206,7 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
         <button class="hdr-btn" onclick="printSchedule()">Print / PDF</button>
         <button class="hdr-btn" onclick="sendWhatsApp()">Send All</button>
         <button class="hdr-btn" onclick="sendTelegram()">Telegram</button>
+        <input type="date" id="scheduleDate" style="padding:4px 8px;font-size:11px;border:0.5px solid var(--border2);border-radius:6px;background:var(--surface);" onchange="updateScheduleDate(this.value)"/>
         <button class="hdr-btn" onclick="sendFeedback()" style="background:var(--amber);color:#000;">Feedback</button>
         <button class="dm-toggle" id="dmToggle" onclick="toggleDark()" title="Toggle dark mode" aria-label="Toggle dark mode">
           <span class="dm-icon" id="iconSun">☀️</span>
@@ -772,10 +773,24 @@ function printSchedule(){
 }
 
 // ── WhatsApp ──────────────────────────────────────────────────────────────
+function getScheduleDate(){
+  const dateInput=document.getElementById('scheduleDate');
+  if(dateInput&&dateInput.value){
+    const d=new Date(dateInput.value);
+    return d.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+  }
+  return new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+}
+
+function updateScheduleDate(value){
+  // Date changed, re-render if needed
+  console.log('Schedule date set to:',value);
+}
+
 function sendWhatsApp(){
   if(st.workers.length===0){alert('No workers in roster!\n\nAdd workers in the Roster tab first.');return;}
   
-  const date=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+  const date=getScheduleDate();
   let msg='*Start Times*\n' + date + '\n\n';
   
   // Show all time slots with assigned workers
@@ -817,7 +832,7 @@ function sendSlotToWhatsApp(slotTime){
   const workers=st.assignments[slotTime]||[];
   if(workers.length===0){alert('No workers assigned to '+tStr(tMin(slotTime))+'!');return;}
   
-  const date=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+  const date=getScheduleDate();
   
   let msg='*Start Time*\n' + date + '\n\n';
   msg+=tStr(tMin(slotTime)).replace(' ','').toLowerCase()+'\n';
@@ -843,7 +858,7 @@ function sendSlotToWhatsApp(slotTime){
 function sendTelegram(){
   if(st.workers.length===0){alert('No workers in roster!\n\nAdd workers in the Roster tab first.');return;}
   
-  const date=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+  const date=getScheduleDate();
   let msg='Start Times\n' + date + '\n\n';
   
   // Show all time slots with assigned workers
@@ -890,7 +905,7 @@ function sendSlotToTelegram(slotTime){
   const workers=st.assignments[slotTime]||[];
   if(workers.length===0){alert('No workers assigned to '+tStr(tMin(slotTime))+'!');return;}
   
-  const date=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+  const date=getScheduleDate();
   
   let msg='Start Time\n' + date + '\n\n';
   msg+=tStr(tMin(slotTime)).replace(' ','').toLowerCase()+'\n';
@@ -1047,6 +1062,13 @@ async function init() {
   applyTheme();
   render();
   loadCurrentUser();
+  
+  // Set today's date in the date picker
+  const dateInput=document.getElementById('scheduleDate');
+  if(dateInput){
+    const today=new Date().toISOString().split('T')[0];
+    dateInput.value=today;
+  }
 }
 
 init();
