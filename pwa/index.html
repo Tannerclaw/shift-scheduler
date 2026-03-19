@@ -264,6 +264,11 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
     <!-- ROSTER -->
     <div class="panel" id="panel-roster" style="padding-top:10px;">
       <input class="roster-search" id="rosterSearch" placeholder="Search crew..." oninput="renderRoster()"/>
+      <div style="margin-bottom:15px;">
+        <button class="hdr-btn" onclick="document.getElementById('vcardInput').click()" style="width:100%;margin-bottom:8px;">📥 Import Contacts (.vcf)</button>
+        <input type="file" id="vcardInput" accept=".vcf,.vcard" style="display:none;" onchange="handleVCardImport(this)"/>
+        <p style="font-size:11px;color:var(--text3);margin-top:5px;">Export contacts from WhatsApp/iPhone, then import here. Skips duplicates.</p>
+      </div>
       <div class="roster-grid" id="rosterGrid"></div>
     </div>
 
@@ -905,6 +910,73 @@ function sendFeedback(){
     'Date: ' + new Date().toLocaleString()
   );
   window.open('mailto:tanner@clawbox.us?subject=' + subject + '&body=' + body, '_blank');
+}
+
+// ── vCard Import ──────────────────────────────────────────────────────────
+function handleVCardImport(input){
+  const file=input.files[0];
+  if(!file)return;
+  
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const vcardText=e.target.result;
+    const result=importContactsFromVCard(vcardText);
+    
+    alert(
+      'Import complete!\n\n' +
+      'Added: ' + result.added + '\n' +
+      'Skipped (duplicates): ' + result.skipped + '\n' +
+      'Total in file: ' + result.total
+    );
+    
+    // Clear input so same file can be selected again
+    input.value='';
+  };
+  reader.readAsText(file);
+}
+
+function importContactsFromVCard(vcardText){
+  const contacts=[];
+  const cards=vcardText.split('BEGIN:VCARD');
+  
+  cards.forEach(card=>{
+    if(!card.includes('END:VCARD'))return;
+    
+    const nameMatch=card.match(/FN:(.+?)(?:\r?\n|$)/);
+    const telMatch=card.match(/TEL[^:]*:(.+?)(?:\r?\n|$)/);
+    
+    if(nameMatch){
+      const name=nameMatch[1].trim();
+      const phone=telMatch?telMatch[1].replace(/[^0-9+]/g,''):'';
+      
+      // Skip if it's Dan (you)
+      if(name.toLowerCase().includes('dan')&&name.toLowerCase().includes('richards'))return;
+      
+      contacts.push({name,phone});
+    }
+  });
+  
+  let added=0;
+  let skipped=0;
+  
+  contacts.forEach(contact=>{
+    // Check if already exists
+    if(!st.workers.find(w=>w.name===contact.name)){
+      st.workers.push({
+        name:contact.name,
+        phone:contact.phone,
+        unavailable:false
+      });
+      added++;
+    }else{
+      skipped++;
+    }
+  });
+  
+  save();
+  render();
+  
+  return{added,skipped,total:contacts.length};
 }
 
 // ── PWA install ───────────────────────────────────────────────────────────
