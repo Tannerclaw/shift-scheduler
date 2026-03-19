@@ -260,7 +260,7 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
     </div>
 
     <!-- ROSTER -->
-    <div class="panel" id="panel-roster">
+    <div class="panel" id="panel-roster" style="padding-top:10px;">
       <input class="roster-search" id="rosterSearch" placeholder="Search crew..." oninput="renderRoster()"/>
       <div class="roster-grid" id="rosterGrid"></div>
     </div>
@@ -419,7 +419,7 @@ function addWorker(){const i=document.getElementById('newWorker');const n=i.valu
 function addWorkerWithPhone(){const nameInput=document.getElementById('newWorkerName');const phoneInput=document.getElementById('newWorkerPhone');const n=nameInput.value.trim();const p=phoneInput.value.trim();if(!n||st.workers.find(w=>w.name===n))return;st.workers.push({name:n,phone:p,unavailable:false});nameInput.value='';phoneInput.value='';save();render();}
 function updateWorkerPhone(name,phone){const w=st.workers.find(x=>x.name===name);if(w){w.phone=phone;save();}}
 function updateWorkerName(oldName,newName){const n=newName.trim();if(!n||n===oldName)return;const w=st.workers.find(x=>x.name===oldName);if(w){w.name=n;save();render();}}
-function deleteWorker(name){if(!confirm('Delete '+name+'?'))return;st.workers=st.workers.filter(w=>w.name!==name);for(const t in st.assignments){st.assignments[t]=st.assignments[t].filter(n=>n!==name);if(st.assignments[t].length===0)delete st.assignments[t];}save();render();}
+function deleteWorker(name){if(!confirm('Delete '+name+' from the roster?\n\nThis cannot be undone.\n\nAre you sure?'))return;st.workers=st.workers.filter(w=>w.name!==name);for(const t in st.assignments){st.assignments[t]=st.assignments[t].filter(n=>n!==name);if(st.assignments[t].length===0)delete st.assignments[t];}save();render();}
 function clearAllData(){if(!confirm('Clear all schedule assignments?\n\nWorkers will remain but be unassigned from all time slots.'))return;st.assignments={};save();render();alert('Schedule cleared! All workers are now unassigned.');}
 function deleteAllWorkers(){if(!confirm('⚠️ WARNING: This will delete ALL workers from the roster.\n\nThis cannot be undone.\n\nAre you sure?'))return;if(!confirm('Are you absolutely sure?'))return;st.workers=[];st.assignments={};save();render();alert('All workers deleted!');}
 function addSlot(){const t=document.getElementById('newSlotTime').value;if(!t||st.slots.find(s=>s.time===t))return;st.slots.push({time:t,desc:''});st.slots.sort((a,b)=>tMin(a.time)-tMin(b.time));save();render();}
@@ -430,7 +430,7 @@ function toggleAvail(name){const w=st.workers.find(x=>x.name===name);if(w){w.una
 let dW=null,dFS=null,tGhost=null;
 
 // ── Render ────────────────────────────────────────────────────────────────
-function render(){renderPools();renderSlots();renderInfoBar();}
+function render(){renderPools();renderSlots();renderInfoBar();renderRoster();}
 
 function renderPools(){
   const p1=document.getElementById('crewPool1'),p2=document.getElementById('crewPool2');
@@ -572,31 +572,38 @@ function renderRoster(){
     const slot=wSlot(w.name);
     const chip=document.createElement('div');
     chip.className='roster-chip'+(w.unavailable?' is-out':slot?' is-assigned':'')
-    chip.style.cssText='flex-direction:column;align-items:flex-start;gap:4px;padding:8px;';
+    chip.style.cssText='flex-direction:column;align-items:flex-start;gap:6px;padding:10px;';
     const col=wColor(w.name);
     
-    const topRow=document.createElement('div');
-    topRow.style.cssText='display:flex;align-items:center;width:100%;gap:5px;';
-    topRow.innerHTML=`<span class="chip-dot" style="background:${w.unavailable?'var(--red)':slot?col:'var(--text3)'};"></span><input type="text" value="${w.name}" style="flex:1;font-size:12px;font-weight:600;padding:2px 4px;border:0.5px solid transparent;border-radius:4px;background:transparent;" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='transparent';updateWorkerName('${w.name}',this.value)"/>`;
+    // Name row
+    const nameRow=document.createElement('div');
+    nameRow.style.cssText='display:flex;align-items:center;width:100%;gap:5px;overflow:hidden;';
+    nameRow.innerHTML=`<span class="chip-dot" style="background:${w.unavailable?'var(--red)':slot?col:'var(--text3)'};flex-shrink:0;"></span><input type="text" value="${w.name}" style="flex:1;min-width:0;font-size:13px;font-weight:600;padding:4px 6px;border:0.5px solid var(--border2);border-radius:4px;background:var(--surface2);box-sizing:border-box;" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--border2)';updateWorkerName('${w.name}',this.value)"/>`;
     
-    if(slot&&!w.unavailable){const tag=document.createElement('span');tag.className='roster-slot-tag';tag.textContent=tStr(tMin(slot));topRow.appendChild(tag);}
+    if(slot&&!w.unavailable){const tag=document.createElement('span');tag.className='roster-slot-tag';tag.textContent=tStr(tMin(slot));tag.style.flexShrink='0';nameRow.appendChild(tag);}
+    chip.appendChild(nameRow);
+    
+    // Buttons row
+    const btnRow=document.createElement('div');
+    btnRow.style.cssText='display:flex;gap:8px;width:100%;margin-top:4px;';
     
     const btn=document.createElement('button');
     btn.className='mark-btn '+(w.unavailable?'mark-in':'mark-out');
+    btn.style.cssText='flex:1;padding:6px 8px;font-size:11px;border-radius:4px;border-width:1px;';
     btn.textContent=w.unavailable?'Mark in':'Mark out';
     btn.addEventListener('click',()=>toggleAvail(w.name));
-    topRow.appendChild(btn);
+    btnRow.appendChild(btn);
     
     // Delete button
     const delBtn=document.createElement('button');
     delBtn.className='mark-btn';
-    delBtn.style.cssText='background:var(--red);color:#fff;margin-left:4px;';
-    delBtn.textContent='✕';
+    delBtn.style.cssText='flex:1;background:var(--red);color:#fff;padding:6px 8px;font-size:11px;font-weight:bold;border-radius:4px;';
+    delBtn.textContent='Delete';
     delBtn.title='Delete worker';
     delBtn.addEventListener('click',()=>deleteWorker(w.name));
-    topRow.appendChild(delBtn);
+    btnRow.appendChild(delBtn);
     
-    chip.appendChild(topRow);
+    chip.appendChild(btnRow);
     
     // Phone input
     const phoneRow=document.createElement('div');
