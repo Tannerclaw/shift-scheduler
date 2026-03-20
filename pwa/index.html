@@ -417,7 +417,7 @@ applyTheme();
 function tMin(t){const[h,m]=t.split(":").map(Number);return h*60+m;}
 function tStr(m){m=((m%1440)+1440)%1440;const h=Math.floor(m/60)%24,mn=m%60,ap=h>=12?"PM":"AM",hd=h%12||12;return `${hd}:${mn<10?"0":""}${mn} ${ap}`;}
 function wColor(n){let h=0;for(let i=0;i<n.length;i++)h=(h*31+n.charCodeAt(i))&0xffff;return COLORS[h%COLORS.length];}
-function wSlot(n){for(const t in st.assignments)if(st.assignments[t]?.includes(n))return t;return null;}
+function wSlot(n){for(const slotId in st.assignments)if(st.assignments[slotId]?.includes(n))return slotId;return null;}
 function autoH(el){el.style.height="auto";el.style.height=Math.max(10,el.scrollHeight)+"px";}
 
 // ── Tabs ──────────────────────────────────────────────────────────────────
@@ -528,7 +528,7 @@ function renderPools(){
 function renderSlots(){
   const col=document.getElementById('slotsCol');col.innerHTML='';
   st.slots.forEach(s=>{
-    const asgn=st.assignments[s.time]||[];
+    const asgn=st.assignments[s.id]||[];
     const outAsgn=asgn.filter(n=>{const w=st.workers.find(x=>x.name===n);return w&&w.unavailable;});
     const card=document.createElement('div');card.className='slot-card';card.dataset.time=s.time;
 
@@ -546,7 +546,7 @@ function renderSlots(){
       const w=st.workers.find(x=>x.name===n);const isOut=w&&w.unavailable;const c=wColor(n);
       const pill=document.createElement('div');pill.className='assigned-pill'+(isOut?' out-pill':'');pill.draggable=true;
       pill.innerHTML=`<span class="chip-dot" style="background:${isOut?'var(--red)':c};"></span><span>${n}${isOut?' ⚠':''}</span>`;
-      pill.addEventListener('dragstart',e=>{dW=n;dFS=s.time;console.log('dragstart slot:',dW,'from',dFS);setTimeout(()=>pill.classList.add('dragging'),0);e.dataTransfer.effectAllowed='move';});
+      pill.addEventListener('dragstart',e=>{dW=n;dFS=s.id;console.log('dragstart slot:',dW,'from',dFS);setTimeout(()=>pill.classList.add('dragging'),0);e.dataTransfer.effectAllowed='move';});
       pill.addEventListener('dragend',()=>{pill.classList.remove('dragging');console.log('dragend slot');});
       pill.addEventListener('touchstart',e=>{e.preventDefault();ts(e,n,s.time);},{passive:false});
       area.appendChild(pill);
@@ -559,8 +559,8 @@ function renderSlots(){
       e.preventDefault();card.classList.remove('drag-over');console.log('DROP on slot:',dW,'from',dFS);if(!dW)return;
       const w=st.workers.find(x=>x.name===dW);if(w&&w.unavailable){console.log('worker unavailable');return;}
       if(dFS)st.assignments[dFS]=st.assignments[dFS].filter(n=>n!==dW);
-      if(!st.assignments[s.time])st.assignments[s.time]=[];
-      if(!st.assignments[s.time].includes(dW))st.assignments[s.time].push(dW);
+      if(!st.assignments[s.id])st.assignments[s.id]=[];
+      if(!st.assignments[s.id].includes(dW))st.assignments[s.id].push(dW);
       dW=null;dFS=null;save();render();console.log('drop success');
     });
     area.addEventListener('dragover',e=>{e.preventDefault();card.classList.add('drag-over');});
@@ -569,14 +569,14 @@ function renderSlots(){
       e.preventDefault();card.classList.remove('drag-over');if(!dW)return;
       const w=st.workers.find(x=>x.name===dW);if(w&&w.unavailable)return;
       if(dFS)st.assignments[dFS]=st.assignments[dFS].filter(n=>n!==dW);
-      if(!st.assignments[s.time])st.assignments[s.time]=[];
-      if(!st.assignments[s.time].includes(dW))st.assignments[s.time].push(dW);
+      if(!st.assignments[s.id])st.assignments[s.id]=[];
+      if(!st.assignments[s.id].includes(dW))st.assignments[s.id].push(dW);
       dW=null;dFS=null;save();render();
     });
     card.addEventListener('touchend',e=>tdSlot(e,card,s.time),{passive:false});
     
     // WhatsApp and Telegram buttons for this specific time slot
-    const asgnCount=(st.assignments[s.time]||[]).length;
+    const asgnCount=(st.assignments[s.id]||[]).length;
     if(asgnCount>0){
       const btnRow=document.createElement('div');
       btnRow.style.cssText='display:flex;gap:8px;margin-top:8px;width:100%;';
@@ -785,7 +785,7 @@ document.addEventListener('touchend',teGlobal,{passive:false});
 function exportCSV(){
   let csv='Time Slot,Task Description,Workers Assigned,Workers Out\n';
   st.slots.forEach(s=>{
-    const all=st.assignments[s.time]||[];
+    const all=st.assignments[s.id]||[];
     const avail=all.filter(n=>{const w=st.workers.find(x=>x.name===n);return !w||!w.unavailable;});
     const out=all.filter(n=>{const w=st.workers.find(x=>x.name===n);return w&&w.unavailable;});
     csv+=`"${tStr(tMin(s.time))}","${(s.desc||'').replace(/"/g,'""')}","${avail.join(' | ')}","${out.join(' | ')}"\n`;
@@ -823,7 +823,7 @@ function sendWhatsApp(){
   // Show all time slots with assigned workers
   let hasAssignments=false;
   st.slots.forEach(s=>{
-    const workers=st.assignments[s.time]||[];
+    const workers=st.assignments[s.id]||[];
     const avail=workers.filter(n=>{const w=st.workers.find(x=>x.name===n);return !w||!w.unavailable;});
     if(avail.length>0){
       hasAssignments=true;
@@ -855,14 +855,16 @@ function sendWhatsApp(){
 }
 
 // Send specific time slot to WhatsApp
-function sendSlotToWhatsApp(slotTime){
-  const workers=st.assignments[slotTime]||[];
-  if(workers.length===0){alert('No workers assigned to '+tStr(tMin(slotTime))+'!');return;}
+function sendSlotToWhatsApp(slotId){
+  const slot=st.slots.find(s=>s.id===slotId);
+  if(!slot){alert('Slot not found!');return;}
+  const workers=st.assignments[slotId]||[];
+  if(workers.length===0){alert('No workers assigned to '+tStr(tMin(slot.time))+'!');return;}
   
   const date=getScheduleDate();
   
   let msg='*Start Time*\n' + date + '\n\n';
-  msg+=tStr(tMin(slotTime)).replace(' ','').toLowerCase()+'\n';
+  msg+=tStr(tMin(slot.time)).replace(' ','').toLowerCase()+'\n';
   
   const avail=workers.filter(n=>{const w=st.workers.find(x=>x.name===n);return !w||!w.unavailable;});
   const out=workers.filter(n=>{const w=st.workers.find(x=>x.name===n);return w&&w.unavailable;});
@@ -891,7 +893,7 @@ function sendTelegram(){
   // Show all time slots with assigned workers
   let hasAssignments=false;
   st.slots.forEach(s=>{
-    const workers=st.assignments[s.time]||[];
+    const workers=st.assignments[s.id]||[];
     const avail=workers.filter(n=>{const w=st.workers.find(x=>x.name===n);return !w||!w.unavailable;});
     if(avail.length>0){
       hasAssignments=true;
@@ -928,8 +930,11 @@ function sendTelegram(){
   });
 }
 
-function sendSlotToTelegram(slotTime){
-  const workers=st.assignments[slotTime]||[];
+function sendSlotToTelegram(slotId){
+  const slot=st.slots.find(s=>s.id===slotId);
+  if(!slot){alert("Slot not found!");return;}
+  
+  const workers=st.assignments[slotId]||[];
   if(workers.length===0){alert('No workers assigned to '+tStr(tMin(slotTime))+'!');return;}
   
   const date=getScheduleDate();
