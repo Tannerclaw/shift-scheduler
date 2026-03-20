@@ -386,7 +386,13 @@ function save(){saveToServer();}
 
 let st = {
   workers:[],
-  slots:[{time:"06:00",desc:""},{time:"08:00",desc:""},{time:"10:00",desc:""},{time:"14:00",desc:""},{time:"18:00",desc:""}],
+  slots:[
+    {id:generateSlotId(),time:"06:00",desc:""},
+    {id:generateSlotId(),time:"08:00",desc:""},
+    {id:generateSlotId(),time:"10:00",desc:""},
+    {id:generateSlotId(),time:"14:00",desc:""},
+    {id:generateSlotId(),time:"18:00",desc:""}
+  ],
   assignments:{},
   darkMode:false
 };
@@ -452,8 +458,29 @@ function deleteAllWorkers(){
   render();
   setTimeout(function(){alert('All workers deleted!');},100);
 }
-function addSlot(){const t=document.getElementById('newSlotTime').value;if(!t||st.slots.find(s=>s.time===t))return;st.slots.push({time:t,desc:''});st.slots.sort((a,b)=>tMin(a.time)-tMin(b.time));save();render();}
-function removeSlot(t){st.slots=st.slots.filter(s=>s.time!==t);delete st.assignments[t];save();render();}
+// Generate unique ID for slots
+function generateSlotId(){return 'slot_'+Date.now()+'_'+Math.random().toString(36).substr(2,9);}
+
+function addSlot(){
+  const t=document.getElementById('newSlotTime').value;
+  if(!t)return;
+  // Allow duplicates - each slot gets unique ID
+  st.slots.push({id:generateSlotId(),time:t,desc:''});
+  st.slots.sort((a,b)=>tMin(a.time)-tMin(b.time));
+  save();
+  render();
+}
+function removeSlot(slotId){
+  const slot=st.slots.find(s=>s.id===slotId);
+  if(!slot)return;
+  const time=slot.time;
+  st.slots=st.slots.filter(s=>s.id!==slotId);
+  // Only delete assignments if no other slots at this time
+  const otherSlotAtTime=st.slots.find(s=>s.time===time);
+  if(!otherSlotAtTime)delete st.assignments[time];
+  save();
+  render();
+}
 function toggleAvail(name){const w=st.workers.find(x=>x.name===name);if(w){w.unavailable=!w.unavailable;save();render();}}
 
 // ── Drag ──────────────────────────────────────────────────────────────────
@@ -511,7 +538,7 @@ function renderSlots(){
     card.appendChild(ta);
 
     const hdr=document.createElement('div');hdr.className='slot-header';
-    hdr.innerHTML=`<span class="slot-time">${tStr(tMin(s.time))}${outAsgn.length?`<span class="unavail-warn">⚠ ${outAsgn.length} out</span>`:''}</span><button class="slot-rm" onclick="removeSlot('${s.time}')">✕</button>`;
+    hdr.innerHTML=`<span class="slot-time">${tStr(tMin(s.time))}${outAsgn.length?`<span class="unavail-warn">⚠ ${outAsgn.length} out</span>`:''}</span><button class="slot-rm" onclick="removeSlot('${s.id}')">✕</button>`;
     card.appendChild(hdr);
 
     const area=document.createElement('div');area.className='slot-workers'+(asgn.length===0?' empty':'');
@@ -1058,6 +1085,10 @@ async function init() {
       if(w.phone===undefined)w.phone='';
     });
     if(st.darkMode===undefined)st.darkMode=false;
+    // Ensure slots have IDs (migration from old format)
+    st.slots.forEach(s=>{
+      if(!s.id)s.id=generateSlotId();
+    });
   }
   applyTheme();
   render();
