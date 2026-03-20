@@ -1097,6 +1097,14 @@ async function init() {
     st.slots.forEach(s=>{
       if(!s.id)s.id=generateSlotId();
     });
+    // Migrate assignments from time-based to ID-based
+    const oldAssignments=st.assignments;
+    st.assignments={};
+    st.slots.forEach(s=>{
+      if(oldAssignments[s.time]){
+        st.assignments[s.id]=[...oldAssignments[s.time]];
+      }
+    });
   }
   applyTheme();
   render();
