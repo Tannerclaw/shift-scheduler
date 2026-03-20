@@ -495,12 +495,14 @@ function renderPools(){
   const half=Math.ceil(st.workers.length/2);
 
   function chip(w,pool){
-    const slot=wSlot(w.name),assigned=slot!==null;
+    const slotId=wSlot(w.name),assigned=slotId!==null;
+    const slot=assigned?st.slots.find(s=>s.id===slotId):null;
+    const slotTime=slot?slot.time:null;
     const el=document.createElement('div');
     el.className='worker-chip'+(w.unavailable?' unavailable':assigned?' assigned':'');
     el.draggable=!w.unavailable&&!assigned;
     const col=wColor(w.name);
-    el.innerHTML=`<span class="chip-dot" style="background:${w.unavailable?'var(--red)':assigned?'var(--text3)':col};"></span><span class="chip-name">${w.name}</span>${assigned&&!w.unavailable?`<span class="chip-tag">${tStr(tMin(slot))}</span>`:''}`;
+    el.innerHTML=`<span class="chip-dot" style="background:${w.unavailable?'var(--red)':assigned?'var(--text3)':col};"></span><span class="chip-name">${w.name}</span>${assigned&&slotTime&&!w.unavailable?`<span class="chip-tag">${tStr(tMin(slotTime))}</span>`:''}`;
     const av=document.createElement('span');
     av.className='avail-btn'+(w.unavailable?' out':'');
     av.title=w.unavailable?'Mark available':'Mark out / sick';
