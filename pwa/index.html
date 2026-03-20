@@ -548,7 +548,7 @@ function renderSlots(){
       pill.innerHTML=`<span class="chip-dot" style="background:${isOut?'var(--red)':c};"></span><span>${n}${isOut?' ⚠':''}</span>`;
       pill.addEventListener('dragstart',e=>{dW=n;dFS=s.id;console.log('dragstart slot:',dW,'from',dFS);setTimeout(()=>pill.classList.add('dragging'),0);e.dataTransfer.effectAllowed='move';});
       pill.addEventListener('dragend',()=>{pill.classList.remove('dragging');console.log('dragend slot');});
-      pill.addEventListener('touchstart',e=>{e.preventDefault();ts(e,n,s.time);},{passive:false});
+      pill.addEventListener('touchstart',e=>{e.preventDefault();ts(e,n,s.id);},{passive:false});
       area.appendChild(pill);
     });
     card.appendChild(area);
@@ -753,13 +753,16 @@ function teGlobal(e){
   const slotCard=el?.closest('.slot-card');
   if(slotCard){
     const time=slotCard.dataset.time;
-    console.log('dropped on slot:',time);
-    if(time){
+    // Find slot ID from time (since multiple slots can share same time)
+    const slot=st.slots.find(s=>s.time===time);
+    const slotId=slot?slot.id:null;
+    console.log('dropped on slot:',time,'id:',slotId);
+    if(slotId){
       const w=st.workers.find(x=>x.name===dW);
       if(w&&w.unavailable){dW=null;dFS=null;return;}
       if(dFS)st.assignments[dFS]=st.assignments[dFS].filter(n=>n!==dW);
-      if(!st.assignments[time])st.assignments[time]=[];
-      if(!st.assignments[time].includes(dW))st.assignments[time].push(dW);
+      if(!st.assignments[slotId])st.assignments[slotId]=[];
+      if(!st.assignments[slotId].includes(dW))st.assignments[slotId].push(dW);
       save();render();
     }
     dW=null;dFS=null;return;
