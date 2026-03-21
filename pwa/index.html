@@ -836,7 +836,7 @@ function deleteAllWorkers(){
 // Generate unique ID for slots
 function addSlot(){console.log("addSlot clicked");
   const t=document.getElementById('newSlotTime').value;
-  if(!t||t===''){alert('Please select a time');return;}alert('Adding slot with time: ' + t);
+  if(!t||t===''){alert('Please select a time');return;}
   // Allow duplicates - each slot gets unique ID
   st.slots.push({id:generateSlotId(),time:t,desc:''});
   st.slots.sort((a,b)=>tMin(a.time)-tMin(b.time));
@@ -875,7 +875,7 @@ function renderPools(){
     el.className='worker-chip'+(w.unavailable?' unavailable':assigned?' assigned':'');
     el.draggable=!w.unavailable&&!assigned;
     const col=wColor(w.name);
-    el.innerHTML=`<span class="chip-dot" style="background:${w.unavailable?'var(--red)':assigned?'var(--text3)':col};"></span><span class="chip-name">${w.name}</span>${assigned&&slotTime&&!w.unavailable?`<span class="chip-tag">${tStr(tMin(slotTime))}</span>`:''}`;
+    el.innerHTML=`<span class="chip-dot" style="background:${w.unavailable?'var(--red)':assigned?'var(--text3)':col};"></span><span class="chip-name">${w.name}</span>`;
     const av=document.createElement('span');
     av.className='avail-btn'+(w.unavailable?' out':'');
     av.title=w.unavailable?'Mark available':'Mark out / sick';
@@ -915,13 +915,7 @@ function renderSlots(){
     const hdr=document.createElement('div');hdr.className='slot-header';
     hdr.style.cssText = 'display:flex;align-items:center;gap:8px;';
     
-    // Time display
-    const timeSpan = document.createElement('span');
-    timeSpan.className = 'slot-time';
-    timeSpan.innerHTML = `${tStr(tMin(s.time))}${outAsgn.length?`<span class="unavail-warn">⚠ ${outAsgn.length} out</span>`:''}`;
-    hdr.appendChild(timeSpan);
-    
-    // Date picker
+    // Date picker FIRST (left side)
     const dateInput = document.createElement('input');
     dateInput.type = 'date';
     dateInput.style.cssText = 'font-size:11px;padding:3px 6px;border:0.5px solid var(--border2);border-radius:4px;background:var(--surface2);color:var(--text);font-family:inherit;flex:1;max-width:130px;';
@@ -931,6 +925,12 @@ function renderSlots(){
       save();
     };
     hdr.appendChild(dateInput);
+    
+    // Time display (after date)
+    const timeSpan = document.createElement('span');
+    timeSpan.className = 'slot-time';
+    timeSpan.innerHTML = `${tStr(tMin(s.time))}${outAsgn.length?`<span class="unavail-warn">⚠ ${outAsgn.length} out</span>`:''}`;
+    hdr.appendChild(timeSpan);
     
     // Remove button
     const rmBtn = document.createElement('button');
