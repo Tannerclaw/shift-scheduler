@@ -748,6 +748,9 @@ async function saveToServer() {
   } catch {}
 }
 
+// Generate unique ID for slots
+function generateSlotId(){return 'slot_'+Date.now()+"_"+Math.random().toString(36).substr(2,9);}
+
 // Legacy sync functions
 function load(){try{const s=localStorage.getItem('shiftV4');return s?JSON.parse(s):null;}catch{return null;}}
 function save(){saveToServer();}
@@ -829,9 +832,8 @@ function deleteAllWorkers(){
   render();
   setTimeout(function(){alert('All workers deleted!');},100);
 }
-// Generate unique ID for slots
-function generateSlotId(){return 'slot_'+Date.now()+'_'+Math.random().toString(36).substr(2,9);}
 
+// Generate unique ID for slots
 function addSlot(){
   const t=document.getElementById('newSlotTime').value;
   if(!t)return;
