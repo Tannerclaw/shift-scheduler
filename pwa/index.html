@@ -834,9 +834,9 @@ function deleteAllWorkers(){
 }
 
 // Generate unique ID for slots
-function addSlot(){
+function addSlot(){console.log("addSlot clicked");
   const t=document.getElementById('newSlotTime').value;
-  if(!t)return;
+  if(!t||t===''){alert('Please select a time');return;}alert('Adding slot with time: ' + t);
   // Allow duplicates - each slot gets unique ID
   st.slots.push({id:generateSlotId(),time:t,desc:''});
   st.slots.sort((a,b)=>tMin(a.time)-tMin(b.time));
