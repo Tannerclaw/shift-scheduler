@@ -762,6 +762,7 @@ let st = {
     {id:generateSlotId(),time:"18:00",desc:""}
   ],
   assignments:{},
+  slotDates:{},
   darkMode:false,
   users:[]
 };
@@ -910,7 +911,32 @@ function renderSlots(){
     card.appendChild(ta);
 
     const hdr=document.createElement('div');hdr.className='slot-header';
-    hdr.innerHTML=`<span class="slot-time">${tStr(tMin(s.time))}${outAsgn.length?`<span class="unavail-warn">⚠ ${outAsgn.length} out</span>`:''}</span><button class="slot-rm" onclick="removeSlot('${s.id}')">✕</button>`;
+    hdr.style.cssText = 'display:flex;align-items:center;gap:8px;';
+    
+    // Time display
+    const timeSpan = document.createElement('span');
+    timeSpan.className = 'slot-time';
+    timeSpan.innerHTML = `${tStr(tMin(s.time))}${outAsgn.length?`<span class="unavail-warn">⚠ ${outAsgn.length} out</span>`:''}`;
+    hdr.appendChild(timeSpan);
+    
+    // Date picker
+    const dateInput = document.createElement('input');
+    dateInput.type = 'date';
+    dateInput.style.cssText = 'font-size:11px;padding:3px 6px;border:0.5px solid var(--border2);border-radius:4px;background:var(--surface2);color:var(--text);font-family:inherit;flex:1;max-width:130px;';
+    dateInput.value = st.slotDates[s.id] || new Date().toISOString().split('T')[0];
+    dateInput.onchange = () => {
+      st.slotDates[s.id] = dateInput.value;
+      save();
+    };
+    hdr.appendChild(dateInput);
+    
+    // Remove button
+    const rmBtn = document.createElement('button');
+    rmBtn.className = 'slot-rm';
+    rmBtn.textContent = '✕';
+    rmBtn.onclick = () => removeSlot(s.id);
+    hdr.appendChild(rmBtn);
+    
     card.appendChild(hdr);
 
     const area=document.createElement('div');area.className='slot-workers'+(asgn.length===0?' empty':'');
@@ -1235,9 +1261,11 @@ function sendSlotToWhatsApp(slotId){
   const workers=st.assignments[slotId]||[];
   if(workers.length===0){alert('No workers assigned to '+tStr(tMin(slot.time))+'!');return;}
   
-  const date=getScheduleDate();
+  // Use slot-specific date if set, otherwise fall back to global schedule date
+  const slotDate = st.slotDates[slotId] || document.getElementById('scheduleDate').value;
+  const displayDate = slotDate ? new Date(slotDate).toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'}) : getScheduleDate();
   
-  let msg='*Start Time*\n' + date + '\n\n';
+  let msg='*Start Time*\n' + displayDate + '\n\n';
   msg+=tStr(tMin(slot.time)).replace(' ','').toLowerCase()+'\n';
   
   const avail=workers.filter(n=>{const w=st.workers.find(x=>x.name===n);return !w||!w.unavailable;});
@@ -1311,9 +1339,11 @@ function sendSlotToTelegram(slotId){
   const workers=st.assignments[slotId]||[];
   if(workers.length===0){alert('No workers assigned to '+tStr(tMin(slot.time))+'!');return;}
   
-  const date=getScheduleDate();
+  // Use slot-specific date if set, otherwise fall back to global schedule date
+  const slotDate = st.slotDates[slotId] || document.getElementById('scheduleDate').value;
+  const displayDate = slotDate ? new Date(slotDate).toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'}) : getScheduleDate();
   
-  let msg='Start Time\n' + date + '\n\n';
+  let msg='Start Time\n' + displayDate + '\n\n';
   msg+=tStr(tMin(slot.time)).replace(' ','').toLowerCase()+'\n';
   
   const avail=workers.filter(n=>{const w=st.workers.find(x=>x.name===n);return !w||!w.unavailable;});
