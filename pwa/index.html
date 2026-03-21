@@ -10,7 +10,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
 <meta http-equiv="Pragma" content="no-cache"/>
 <meta http-equiv="Expires" content="0"/>
-<link rel="manifest" href="manifest.json"/>
+<link rel="manifest" href="manifest.json?v=2"/>
 <title>Concrete Finisher Shift Scheduler</title>
 <style>
 /* ── THEME TOKENS ── */
@@ -190,10 +190,37 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
 .print-hdr{display:none;margin-bottom:14px;}
 .print-hdr h1{font-size:18px;font-weight:700;color:#000;}
 .print-hdr p{font-size:12px;color:#555;margin-top:3px;}
+
+/* ── AUTH MODAL ── */
+.auth-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(4px);}
+.auth-modal{background:var(--surface);border-radius:12px;padding:24px;width:90%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.3);}
+.auth-modal h2{color:var(--green);font-size:20px;margin-bottom:4px;}
+.auth-modal p{color:var(--text2);font-size:12px;margin-bottom:16px;}
+.auth-input{width:100%;padding:12px;margin-bottom:12px;border:0.5px solid var(--border2);border-radius:8px;background:var(--surface2);color:var(--text);font-size:15px;font-family:inherit;transition:border-color .15s;}
+.auth-input:focus{outline:none;border-color:var(--green);}
+.auth-btn{width:100%;padding:12px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:filter .15s;margin-bottom:8px;}
+.auth-btn.primary{background:var(--green);color:#fff;}
+.auth-btn.secondary{background:var(--surface3);color:var(--text);}
+.auth-btn:active{filter:brightness(.92);}
+.auth-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.auth-row label{font-size:13px;color:var(--text2);display:flex;align-items:center;gap:6px;cursor:pointer;}
+.auth-row input[type="checkbox"]{width:16px;height:16px;accent-color:var(--green);}
+.auth-link{color:var(--green);font-size:12px;cursor:pointer;text-decoration:underline;}
+.auth-link:hover{opacity:.8;}
+.auth-message{padding:10px;border-radius:6px;font-size:12px;margin-bottom:12px;text-align:center;}
+.auth-message.error{background:var(--red-light);color:var(--red);border:0.5px solid var(--red);}
+.auth-message.success{background:var(--green-light);color:var(--green-dark);border:0.5px solid var(--green);}
+.auth-message.info{background:var(--amber-light);color:var(--amber-dark);border:0.5px solid var(--amber);}
+.hidden{display:none!important;}
+
+/* User badge in header */
+.user-badge{background:rgba(255,255,255,0.2);border-radius:20px;padding:4px 12px;font-size:11px;display:flex;align-items:center;gap:6px;}
+.user-badge.admin{background:rgba(250,199,117,0.3);}
+.user-badge span{font-weight:600;}
 </style>
 </head>
 <body>
-<div class="app">
+<div class="app" id="appContainer" style="display:none;">
 
   <div class="app-header">
     <div class="header-inner">
@@ -208,6 +235,10 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
         <button class="hdr-btn" onclick="sendTelegram()">Telegram</button>
         <input type="date" id="scheduleDate" style="padding:4px 8px;font-size:11px;border:0.5px solid var(--border2);border-radius:6px;background:var(--surface);" onchange="updateScheduleDate(this.value)"/>
         <button class="hdr-btn" onclick="sendFeedback()" style="background:var(--amber);color:#000;">Feedback</button>
+        <div class="user-badge" id="userBadge">
+          <span id="currentUserDisplayName">User</span>
+          <button class="hdr-btn" onclick="signOut()" style="margin-left:4px;padding:3px 8px;font-size:10px;">Sign Out</button>
+        </div>
         <button class="dm-toggle" id="dmToggle" onclick="toggleDark()" title="Toggle dark mode" aria-label="Toggle dark mode">
           <span class="dm-icon" id="iconSun">☀️</span>
           <span class="dm-icon" id="iconMoon">🌙</span>
@@ -291,6 +322,21 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
       <div style="padding:20px;max-width:600px;">
         <h2 style="margin-bottom:20px;">Settings</h2>
         
+        <div id="adminPanel" style="background:var(--green-light);border:0.5px solid var(--green);padding:15px;border-radius:8px;margin-bottom:15px;display:none;">
+          <h3 style="margin-bottom:10px;">👤 Admin Panel</h3>
+          
+          <div id="pendingUsersSection" style="margin-bottom:15px;">
+            <h4 style="font-size:13px;margin-bottom:8px;color:var(--green-dark);">Pending Approvals</h4>
+            <div id="pendingUsersList" style="display:flex;flex-direction:column;gap:8px;"></div>
+            <p id="noPendingUsers" style="font-size:12px;color:var(--text3);font-style:italic;">No pending users</p>
+          </div>
+          
+          <div>
+            <h4 style="font-size:13px;margin-bottom:8px;color:var(--green-dark);">All Users</h4>
+            <div id="allUsersList" style="display:flex;flex-direction:column;gap:8px;"></div>
+          </div>
+        </div>
+        
         <div style="background:var(--surface2);padding:15px;border-radius:8px;margin-bottom:15px;">
           <h3 style="margin-bottom:10px;">Clear Schedule</h3>
           <p style="font-size:12px;color:var(--text2);margin-bottom:10px;">Unassign all workers from time slots. Workers remain in roster.</p>
@@ -326,7 +372,329 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
   </div>
 </div>
 
+<!-- AUTHENTICATION OVERLAY -->
+<div id="authOverlay" class="auth-overlay">
+  <div id="loginPanel" class="auth-modal">
+    <h2>Shift Scheduler</h2>
+    <p>Sign in to access your schedule</p>
+    <div id="loginMessage" class="auth-message hidden"></div>
+    <input type="text" id="loginUsername" class="auth-input" placeholder="Username" autocomplete="username"/>
+    <input type="password" id="loginPassword" class="auth-input" placeholder="Password" autocomplete="current-password"/>
+    <div class="auth-row">
+      <label><input type="checkbox" id="rememberMe"/> Remember me</label>
+    </div>
+    <button class="auth-btn primary" onclick="login()">Sign In</button>
+    <button class="auth-btn secondary" onclick="showRegister()">Register New Account</button>
+  </div>
+  
+  <div id="registerPanel" class="auth-modal hidden">
+    <h2>Create Account</h2>
+    <p>Register for access to the schedule</p>
+    <div id="registerMessage" class="auth-message hidden"></div>
+    <input type="text" id="regUsername" class="auth-input" placeholder="Username" autocomplete="username"/>
+    <input type="password" id="regPassword" class="auth-input" placeholder="Password" autocomplete="new-password"/>
+    <input type="password" id="regPasswordConfirm" class="auth-input" placeholder="Confirm Password" autocomplete="new-password"/>
+    <button class="auth-btn primary" onclick="register()">Register</button>
+    <button class="auth-btn secondary" onclick="showLogin()">Back to Sign In</button>
+  </div>
+  
+  <div id="pendingPanel" class="auth-modal hidden">
+    <h2>Account Pending</h2>
+    <p>Your account is awaiting admin approval</p>
+    <div class="auth-message info">Your registration has been submitted. An admin must approve your account before you can access the scheduler.</div>
+    <button class="auth-btn secondary" onclick="showLogin()">Back to Sign In</button>
+  </div>
+</div>
+
 <script>
+// ==================== AUTHENTICATION SYSTEM ====================
+
+// Initialize users array with default admin if empty
+function initUsers() {
+  if (!st.users) st.users = [];
+  // Create default admin if no users exist
+  if (st.users.length === 0) {
+    st.users.push({
+      username: 'admin',
+      password: 'admin123',
+      role: 'admin',
+      approved: true
+    });
+    // Save immediately so admin persists
+    save();
+  }
+}
+
+// Current session
+let currentUser = null;
+
+function showAuthOverlay() {
+  document.getElementById('authOverlay').style.display = 'flex';
+  document.getElementById('appContainer').style.display = 'none';
+}
+
+function hideAuthOverlay() {
+  document.getElementById('authOverlay').style.display = 'none';
+  document.getElementById('appContainer').style.display = 'flex';
+}
+
+function showLogin() {
+  document.getElementById('loginPanel').classList.remove('hidden');
+  document.getElementById('registerPanel').classList.add('hidden');
+  document.getElementById('pendingPanel').classList.add('hidden');
+  hideMessage('loginMessage');
+}
+
+function showRegister() {
+  document.getElementById('loginPanel').classList.add('hidden');
+  document.getElementById('registerPanel').classList.remove('hidden');
+  document.getElementById('pendingPanel').classList.add('hidden');
+  hideMessage('registerMessage');
+}
+
+function showPending() {
+  document.getElementById('loginPanel').classList.add('hidden');
+  document.getElementById('registerPanel').classList.add('hidden');
+  document.getElementById('pendingPanel').classList.remove('hidden');
+}
+
+function showMessage(id, text, type) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = 'auth-message ' + type;
+  el.classList.remove('hidden');
+}
+
+function hideMessage(id) {
+  document.getElementById(id).classList.add('hidden');
+}
+
+function login() {
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const rememberMe = document.getElementById('rememberMe').checked;
+  
+  if (!username || !password) {
+    showMessage('loginMessage', 'Please enter username and password', 'error');
+    return;
+  }
+  
+  const user = st.users.find(u => u.username === username && u.password === password);
+  
+  if (!user) {
+    showMessage('loginMessage', 'Invalid username or password', 'error');
+    return;
+  }
+  
+  if (!user.approved) {
+    showPending();
+    return;
+  }
+  
+  // Login successful
+  currentUser = user;
+  if (rememberMe) {
+    localStorage.setItem('shiftSchedulerUser', username);
+  }
+  
+  updateUserBadge();
+  hideAuthOverlay();
+  render();
+  
+  // Clear login form
+  document.getElementById('loginUsername').value = '';
+  document.getElementById('loginPassword').value = '';
+  hideMessage('loginMessage');
+}
+
+function register() {
+  const username = document.getElementById('regUsername').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const passwordConfirm = document.getElementById('regPasswordConfirm').value;
+  
+  if (!username || !password) {
+    showMessage('registerMessage', 'Please enter username and password', 'error');
+    return;
+  }
+  
+  if (username.length < 3) {
+    showMessage('registerMessage', 'Username must be at least 3 characters', 'error');
+    return;
+  }
+  
+  if (password.length < 4) {
+    showMessage('registerMessage', 'Password must be at least 4 characters', 'error');
+    return;
+  }
+  
+  if (password !== passwordConfirm) {
+    showMessage('registerMessage', 'Passwords do not match', 'error');
+    return;
+  }
+  
+  // Check if username already exists
+  if (st.users.find(u => u.username === username)) {
+    showMessage('registerMessage', 'Username already exists', 'error');
+    return;
+  }
+  
+  // Create new user with pending status
+  st.users.push({
+    username: username,
+    password: password,
+    role: 'user',
+    approved: false
+  });
+  
+  save();
+  
+  // Clear registration form
+  document.getElementById('regUsername').value = '';
+  document.getElementById('regPassword').value = '';
+  document.getElementById('regPasswordConfirm').value = '';
+  hideMessage('registerMessage');
+  
+  showPending();
+}
+
+function signOut() {
+  currentUser = null;
+  localStorage.removeItem('shiftSchedulerUser');
+  showAuthOverlay();
+  showLogin();
+}
+
+function updateUserBadge() {
+  const badge = document.getElementById('userBadge');
+  const nameDisplay = document.getElementById('currentUserDisplayName');
+  
+  if (currentUser) {
+    nameDisplay.textContent = currentUser.username;
+    if (currentUser.role === 'admin') {
+      badge.classList.add('admin');
+      nameDisplay.textContent += ' (Admin)';
+    } else {
+      badge.classList.remove('admin');
+    }
+  }
+}
+
+function checkAutoLogin() {
+  const savedUser = localStorage.getItem('shiftSchedulerUser');
+  if (savedUser) {
+    const user = st.users.find(u => u.username === savedUser && u.approved);
+    if (user) {
+      currentUser = user;
+      updateUserBadge();
+      hideAuthOverlay();
+      return true;
+    }
+  }
+  return false;
+}
+
+// ==================== ADMIN PANEL ====================
+
+function renderAdminPanel() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    document.getElementById('adminPanel').style.display = 'none';
+    return;
+  }
+  
+  document.getElementById('adminPanel').style.display = 'block';
+  
+  // Render pending users
+  const pendingUsers = st.users.filter(u => !u.approved);
+  const pendingList = document.getElementById('pendingUsersList');
+  const noPending = document.getElementById('noPendingUsers');
+  
+  pendingList.innerHTML = '';
+  
+  if (pendingUsers.length === 0) {
+    pendingList.style.display = 'none';
+    noPending.style.display = 'block';
+  } else {
+    pendingList.style.display = 'flex';
+    noPending.style.display = 'none';
+    
+    pendingUsers.forEach(user => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:var(--surface);padding:10px;border-radius:6px;border:0.5px solid var(--border);';
+      row.innerHTML = `
+        <span style="font-weight:500;">${user.username}</span>
+        <div style="display:flex;gap:8px;">
+          <button onclick="approveUser('${user.username}')" style="background:var(--green);color:#fff;border:none;border-radius:4px;padding:5px 12px;font-size:11px;cursor:pointer;">Approve</button>
+          <button onclick="rejectUser('${user.username}')" style="background:var(--red);color:#fff;border:none;border-radius:4px;padding:5px 12px;font-size:11px;cursor:pointer;">Reject</button>
+        </div>
+      `;
+      pendingList.appendChild(row);
+    });
+  }
+  
+  // Render all users
+  const allUsersList = document.getElementById('allUsersList');
+  allUsersList.innerHTML = '';
+  
+  st.users.forEach(user => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:var(--surface);padding:10px;border-radius:6px;border:0.5px solid var(--border);';
+    
+    const roleBadge = user.role === 'admin' 
+      ? '<span style="background:var(--amber);color:var(--amber-dark);padding:2px 8px;border-radius:3px;font-size:10px;font-weight:600;">ADMIN</span>'
+      : '<span style="background:var(--surface2);color:var(--text2);padding:2px 8px;border-radius:3px;font-size:10px;">User</span>';
+    
+    const statusBadge = user.approved
+      ? '<span style="color:var(--green);font-size:11px;">✓ Approved</span>'
+      : '<span style="color:var(--amber-dark);font-size:11px;">⏳ Pending</span>';
+    
+    let deleteButton = '';
+    if (user.username !== 'admin') {
+      deleteButton = `<button onclick="deleteUser('${user.username}')" style="background:var(--red-light);color:var(--red);border:0.5px solid var(--red);border-radius:4px;padding:5px 12px;font-size:11px;cursor:pointer;">Delete</button>`;
+    }
+    
+    row.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-weight:500;">${user.username}</span>
+        ${roleBadge}
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        ${statusBadge}
+        ${deleteButton}
+      </div>
+    `;
+    allUsersList.appendChild(row);
+  });
+}
+
+function approveUser(username) {
+  const user = st.users.find(u => u.username === username);
+  if (user) {
+    user.approved = true;
+    save();
+    renderAdminPanel();
+  }
+}
+
+function rejectUser(username) {
+  if (!confirm(`Reject and delete user "${username}"?`)) return;
+  st.users = st.users.filter(u => u.username !== username);
+  save();
+  renderAdminPanel();
+}
+
+function deleteUser(username) {
+  if (!confirm(`Delete user "${username}"? This cannot be undone.`)) return;
+  if (username === currentUser.username) {
+    alert('You cannot delete your own account while logged in.');
+    return;
+  }
+  st.users = st.users.filter(u => u.username !== username);
+  save();
+  renderAdminPanel();
+}
+
+// ==================== ORIGINAL APP CODE ====================
+
 const COLORS=["#1D9E75","#378ADD","#D85A30","#7F77DD","#BA7517","#D4537E","#639922","#5F5E5A","#0F6E56","#185FA5","#993C1D","#3C3489"];
 const SHIFT_MINS=600, REST_MINS=600;
 
@@ -380,6 +748,9 @@ async function saveToServer() {
   } catch {}
 }
 
+// Generate unique ID for slots
+function generateSlotId(){return 'slot_'+Date.now()+"_"+Math.random().toString(36).substr(2,9);}
+
 // Legacy sync functions
 function load(){try{const s=localStorage.getItem('shiftV4');return s?JSON.parse(s):null;}catch{return null;}}
 function save(){saveToServer();}
@@ -394,7 +765,9 @@ let st = {
     {id:generateSlotId(),time:"18:00",desc:""}
   ],
   assignments:{},
-  darkMode:false
+  slotDates:{},
+  darkMode:false,
+  users:[]
 };
 st.workers.forEach(w=>{if(w.unavailable===undefined)w.unavailable=false;if(w.phone===undefined)w.phone='';});
 if(st.darkMode===undefined)st.darkMode=false;
@@ -428,6 +801,7 @@ function showTab(id,el){
   el.classList.add('active');
   if(id==='timeline')renderTL();
   if(id==='roster')renderRoster();
+  if(id==='settings')renderAdminPanel();
 }
 
 // ── Mutations ─────────────────────────────────────────────────────────────
@@ -458,12 +832,11 @@ function deleteAllWorkers(){
   render();
   setTimeout(function(){alert('All workers deleted!');},100);
 }
-// Generate unique ID for slots
-function generateSlotId(){return 'slot_'+Date.now()+'_'+Math.random().toString(36).substr(2,9);}
 
-function addSlot(){
+// Generate unique ID for slots
+function addSlot(){console.log("addSlot clicked");
   const t=document.getElementById('newSlotTime').value;
-  if(!t)return;
+  if(!t||t===''){alert('Please select a time');return;}
   // Allow duplicates - each slot gets unique ID
   st.slots.push({id:generateSlotId(),time:t,desc:''});
   st.slots.sort((a,b)=>tMin(a.time)-tMin(b.time));
@@ -502,7 +875,7 @@ function renderPools(){
     el.className='worker-chip'+(w.unavailable?' unavailable':assigned?' assigned':'');
     el.draggable=!w.unavailable&&!assigned;
     const col=wColor(w.name);
-    el.innerHTML=`<span class="chip-dot" style="background:${w.unavailable?'var(--red)':assigned?'var(--text3)':col};"></span><span class="chip-name">${w.name}</span>${assigned&&slotTime&&!w.unavailable?`<span class="chip-tag">${tStr(tMin(slotTime))}</span>`:''}`;
+    el.innerHTML=`<span class="chip-dot" style="background:${w.unavailable?'var(--red)':assigned?'var(--text3)':col};"></span><span class="chip-name">${w.name}</span>`;
     const av=document.createElement('span');
     av.className='avail-btn'+(w.unavailable?' out':'');
     av.title=w.unavailable?'Mark available':'Mark out / sick';
@@ -540,7 +913,32 @@ function renderSlots(){
     card.appendChild(ta);
 
     const hdr=document.createElement('div');hdr.className='slot-header';
-    hdr.innerHTML=`<span class="slot-time">${tStr(tMin(s.time))}${outAsgn.length?`<span class="unavail-warn">⚠ ${outAsgn.length} out</span>`:''}</span><button class="slot-rm" onclick="removeSlot('${s.id}')">✕</button>`;
+    hdr.style.cssText = 'display:flex;align-items:center;gap:8px;';
+    
+    // Date picker FIRST (left side)
+    const dateInput = document.createElement('input');
+    dateInput.type = 'date';
+    dateInput.style.cssText = 'font-size:11px;padding:3px 6px;border:0.5px solid var(--border2);border-radius:4px;background:var(--surface2);color:var(--text);font-family:inherit;flex:1;max-width:130px;';
+    dateInput.value = st.slotDates[s.id] || new Date().toISOString().split('T')[0];
+    dateInput.onchange = () => {
+      st.slotDates[s.id] = dateInput.value;
+      save();
+    };
+    hdr.appendChild(dateInput);
+    
+    // Time display (after date)
+    const timeSpan = document.createElement('span');
+    timeSpan.className = 'slot-time';
+    timeSpan.innerHTML = `${tStr(tMin(s.time))}${outAsgn.length?`<span class="unavail-warn">⚠ ${outAsgn.length} out</span>`:''}`;
+    hdr.appendChild(timeSpan);
+    
+    // Remove button
+    const rmBtn = document.createElement('button');
+    rmBtn.className = 'slot-rm';
+    rmBtn.textContent = '✕';
+    rmBtn.onclick = () => removeSlot(s.id);
+    hdr.appendChild(rmBtn);
+    
     card.appendChild(hdr);
 
     const area=document.createElement('div');area.className='slot-workers'+(asgn.length===0?' empty':'');
@@ -865,9 +1263,11 @@ function sendSlotToWhatsApp(slotId){
   const workers=st.assignments[slotId]||[];
   if(workers.length===0){alert('No workers assigned to '+tStr(tMin(slot.time))+'!');return;}
   
-  const date=getScheduleDate();
+  // Use slot-specific date if set, otherwise fall back to global schedule date
+  const slotDate = st.slotDates[slotId] || document.getElementById('scheduleDate').value;
+  const displayDate = slotDate ? new Date(slotDate).toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'}) : getScheduleDate();
   
-  let msg='*Start Time*\n' + date + '\n\n';
+  let msg='*Start Time*\n' + displayDate + '\n\n';
   msg+=tStr(tMin(slot.time)).replace(' ','').toLowerCase()+'\n';
   
   const avail=workers.filter(n=>{const w=st.workers.find(x=>x.name===n);return !w||!w.unavailable;});
@@ -939,12 +1339,14 @@ function sendSlotToTelegram(slotId){
   if(!slot){alert("Slot not found!");return;}
   
   const workers=st.assignments[slotId]||[];
-  if(workers.length===0){alert('No workers assigned to '+tStr(tMin(slotTime))+'!');return;}
+  if(workers.length===0){alert('No workers assigned to '+tStr(tMin(slot.time))+'!');return;}
   
-  const date=getScheduleDate();
+  // Use slot-specific date if set, otherwise fall back to global schedule date
+  const slotDate = st.slotDates[slotId] || document.getElementById('scheduleDate').value;
+  const displayDate = slotDate ? new Date(slotDate).toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'}) : getScheduleDate();
   
-  let msg='Start Time\n' + date + '\n\n';
-  msg+=tStr(tMin(slotTime)).replace(' ','').toLowerCase()+'\n';
+  let msg='Start Time\n' + displayDate + '\n\n';
+  msg+=tStr(tMin(slot.time)).replace(' ','').toLowerCase()+'\n';
   
   const avail=workers.filter(n=>{const w=st.workers.find(x=>x.name===n);return !w||!w.unavailable;});
   const out=workers.filter(n=>{const w=st.workers.find(x=>x.name===n);return w&&w.unavailable;});
@@ -968,6 +1370,7 @@ function sendSlotToTelegram(slotId){
     window.open('https://t.me/share/url?url=&text=' + encodeURIComponent(msg),'_blank');
   });
 }
+
 
 // Send feedback email
 function sendFeedback(){
@@ -1111,8 +1514,23 @@ async function init() {
       });
     }
   }
+  
+  // Initialize users FIRST (before checking auto-login)
+  initUsers();
+  
   applyTheme();
-  render();
+  
+  // Check for auto-login AFTER users are initialized
+  const autoLoggedIn = checkAutoLogin();
+  
+  if (!autoLoggedIn) {
+    showAuthOverlay();
+    showLogin();
+  } else {
+    hideAuthOverlay();
+    render();
+  }
+  
   loadCurrentUser();
   
   // Set today's date in the date picker
