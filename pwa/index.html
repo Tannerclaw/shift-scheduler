@@ -1483,12 +1483,12 @@ async function init() {
     }
   }
   
-  // Initialize users with default admin
+  // Initialize users FIRST (before checking auto-login)
   initUsers();
   
   applyTheme();
   
-  // Check for auto-login first
+  // Check for auto-login AFTER users are initialized
   const autoLoggedIn = checkAutoLogin();
   
   if (!autoLoggedIn) {
