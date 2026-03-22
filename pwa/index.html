@@ -131,7 +131,7 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
 .slot-desc::placeholder{color:var(--text3);font-style:italic;font-weight:400;}
 .slot-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
 .slot-time{font-size:13px;font-weight:600;color:var(--text);}
-.slot-rm{background:none;border:none;font-size:9px;color:var(--text3);cursor:pointer;opacity:.35;padding:2px 4px;transition:opacity .15s;}
+.slot-rm{background:none;border:none;font-size:12px;color:var(--text3);cursor:pointer;opacity:.35;padding:4px 8px;transition:opacity .15s;}
 .slot-rm:hover{opacity:1;color:var(--red);}
 .slot-workers{display:flex;flex-wrap:wrap;gap:2px;min-height:22px;align-items:center;}
 .slot-workers.empty::after{content:"drop workers here";font-size:10px;color:var(--text3);font-style:italic;}
@@ -226,14 +226,12 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
     <div class="header-inner">
       <div>
         <div class="app-title">Shift Scheduler</div>
-        <div class="app-subtitle">Concrete Finishing Crew · 10-hr rest enforced</div>
       </div>
       <div class="header-actions">
         <button class="hdr-btn" onclick="exportCSV()">CSV</button>
         <button class="hdr-btn" onclick="printSchedule()">Print / PDF</button>
-        <button class="hdr-btn" onclick="sendWhatsApp()">Send All</button>
+        <button class="hdr-btn" onclick="sendWhatsApp()">WhatsApp</button>
         <button class="hdr-btn" onclick="sendTelegram()">Telegram</button>
-        <input type="date" id="scheduleDate" style="padding:4px 8px;font-size:11px;border:0.5px solid var(--border2);border-radius:6px;background:var(--surface);" onchange="updateScheduleDate(this.value)"/>
         <button class="hdr-btn" onclick="sendFeedback()" style="background:var(--amber);color:#000;">Feedback</button>
         <div class="user-badge" id="userBadge">
           <span id="currentUserDisplayName">User</span>
@@ -364,7 +362,7 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
         
         <div style="background:var(--surface2);padding:15px;border-radius:8px;">
           <h3 style="margin-bottom:10px;">About</h3>
-          <p style="font-size:12px;color:var(--text2);">Shift Scheduler v1.0<br>Built for concrete finishing crews<br>WhatsApp integration included</p>
+          <p style="font-size:12px;color:var(--text2);">Shift Scheduler v1.0<br>WhatsApp integration included</p>
         </div>
       </div>
     </div>
@@ -996,6 +994,14 @@ function renderSlots(){
       tgBtn.textContent='Telegram';
       tgBtn.onclick=()=>sendSlotToTelegram(s.id);
       btnRow.appendChild(tgBtn);
+      
+      // Clear button
+      const clearBtn=document.createElement('button');
+      clearBtn.className='hdr-btn';
+      clearBtn.style.cssText='flex:1;background:var(--red);color:#fff;padding:6px 8px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;';
+      clearBtn.textContent='Clear';
+      clearBtn.onclick=()=>{if(confirm('Clear all workers from '+tStr(tMin(s.time))+'?')){st.assignments[s.id]=[];save();render();}};
+      btnRow.appendChild(clearBtn);
       
       card.appendChild(btnRow);
     }
