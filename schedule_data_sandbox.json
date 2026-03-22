@@ -1,11 +1,7 @@
 {
   "assignments": {
     "slot_1774127842287_i24fbb5mg": [
-      "Test Worker",
       "Bob"
-    ],
-    "slot_1774128099984_qzf3xlaxx": [
-      "Dan"
     ]
   },
   "darkMode": false,
@@ -15,6 +11,11 @@
       "desc": "",
       "id": "slot_1774128099984_qzf3xlaxx",
       "time": "14:00"
+    },
+    {
+      "desc": "",
+      "id": "slot_1774147457274_16ipgyn8j",
+      "time": "18:00"
     }
   ],
   "users": [
@@ -26,11 +27,6 @@
     }
   ],
   "workers": [
-    {
-      "name": "Test Worker",
-      "phone": "",
-      "unavailable": false
-    },
     {
       "name": "Dan",
       "phone": "",

@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request, make_response
 from flask_cors import CORS
 import json
 import os
+import time
 
 app = Flask(__name__, static_folder='pwa', static_url_path='')
 CORS(app)
@@ -16,6 +17,7 @@ def add_header(response):
     return response
 
 DATA_FILE = 'schedule_data_sandbox.json'
+DATA_FILE_CREWS = 'schedule_data_crews.json'
 
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -38,6 +40,28 @@ def save_data(data):
     with open(DATA_FILE, 'w') as f:
         json.dump(data, f, indent=2)
 
+def load_crews_data():
+    if os.path.exists(DATA_FILE_CREWS):
+        with open(DATA_FILE_CREWS, 'r') as f:
+            return json.load(f)
+    ts = int(time.time() * 1000)
+    return {
+        "workers": [],
+        "slots": [
+            {"id": "slot_" + str(ts) + "_1", "time": "06:00", "desc": ""},
+            {"id": "slot_" + str(ts + 1) + "_2", "time": "08:00", "desc": ""},
+            {"id": "slot_" + str(ts + 2) + "_3", "time": "10:00", "desc": ""},
+            {"id": "slot_" + str(ts + 3) + "_4", "time": "14:00", "desc": ""},
+            {"id": "slot_" + str(ts + 4) + "_5", "time": "18:00", "desc": ""}
+        ],
+        "assignments": {},
+        "slotDates": {}
+    }
+
+def save_crews_data(data):
+    with open(DATA_FILE_CREWS, 'w') as f:
+        json.dump(data, f, indent=2)
+
 @app.route('/api/data', methods=['GET'])
 def get_data():
     return jsonify(load_data())
@@ -46,6 +70,16 @@ def get_data():
 def post_data():
     data = request.json
     save_data(data)
+    return jsonify({"status": "saved"})
+
+@app.route('/api/data/crews', methods=['GET'])
+def get_crews_data():
+    return jsonify(load_crews_data())
+
+@app.route('/api/data/crews', methods=['POST'])
+def post_crews_data():
+    data = request.json
+    save_crews_data(data)
     return jsonify({"status": "saved"})
 
 @app.route('/api/health', methods=['GET'])

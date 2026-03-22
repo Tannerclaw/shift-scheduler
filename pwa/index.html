@@ -785,6 +785,42 @@ function generateSlotId(){return 'slot_'+Date.now()+"_"+Math.random().toString(3
 function load(){try{const s=localStorage.getItem('shiftV4');return s?JSON.parse(s):null;}catch{return null;}}
 function save(){saveToServer();}
 
+// Crews panel save/load functions - COMPLETELY SEPARATE
+async function loadCrewsFromServer() {
+  try {
+    const res = await fetch(API_URL + '/api/data/crews');
+    if (!res.ok) throw new Error('Server error');
+    const data = await res.json();
+    localStorage.setItem('shiftCrewsV1', JSON.stringify(data));
+    return data;
+  } catch (e) {
+    console.log('Server load failed for crews, using localStorage:', e);
+    try {
+      const s = localStorage.getItem('shiftCrewsV1');
+      return s ? JSON.parse(s) : null;
+    } catch {
+      return null;
+    }
+  }
+}
+
+async function saveCrews() {
+  try {
+    const res = await fetch(API_URL + '/api/data/crews', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(stCrews)
+    });
+    if (!res.ok) throw new Error('Server error');
+  } catch (e) {
+    console.log('Server save failed for crews:', e);
+  }
+  // Always backup to localStorage
+  try {
+    localStorage.setItem('shiftCrewsV1', JSON.stringify(stCrews));
+  } catch {}
+}
+
 let st = {
   workers:[],
   slots:[
@@ -798,6 +834,20 @@ let st = {
   slotDates:{},
   darkMode:false,
   users:[]
+};
+
+// Separate data store for Crews panel - COMPLETELY INDEPENDENT
+let stCrews = {
+  workers:[],
+  slots:[
+    {id:generateSlotId(),time:"06:00",desc:""},
+    {id:generateSlotId(),time:"08:00",desc:""},
+    {id:generateSlotId(),time:"10:00",desc:""},
+    {id:generateSlotId(),time:"14:00",desc:""},
+    {id:generateSlotId(),time:"18:00",desc:""}
+  ],
+  assignments:{},
+  slotDates:{}
 };
 st.workers.forEach(w=>{if(w.unavailable===undefined)w.unavailable=false;if(w.phone===undefined)w.phone='';});
 if(st.darkMode===undefined)st.darkMode=false;
@@ -1049,14 +1099,26 @@ function renderCrews(){
   renderSlotsCrews();
 }
 
+// Helper for stCrews - find which slot a worker is assigned to
+function wSlotCrews(n){
+  for(const slotId in stCrews.assignments)if(stCrews.assignments[slotId]?.includes(n))return slotId;
+  return null;
+}
+
+// Toggle availability in crews panel
+function toggleAvailCrews(name){
+  const w=stCrews.workers.find(x=>x.name===name);
+  if(w){w.unavailable=!w.unavailable;saveCrews();renderCrews();}
+}
+
 function renderPoolsCrews(){
   const p1=document.getElementById('crewPool1Crews'),p2=document.getElementById('crewPool2Crews');
   p1.innerHTML='';p2.innerHTML='';
-  const half=Math.ceil(st.workers.length/2);
+  const half=Math.ceil(stCrews.workers.length/2);
 
   function chip(w,pool){
-    const slotId=wSlot(w.name),assigned=slotId!==null;
-    const slot=assigned?st.slots.find(s=>s.id===slotId):null;
+    const slotId=wSlotCrews(w.name),assigned=slotId!==null;
+    const slot=assigned?stCrews.slots.find(s=>s.id===slotId):null;
     const slotTime=slot?slot.time:null;
     const el=document.createElement('div');
     el.className='worker-chip'+(w.unavailable?' unavailable':assigned?' assigned':'');
@@ -1067,35 +1129,35 @@ function renderPoolsCrews(){
     av.className='avail-btn'+(w.unavailable?' out':'');
     av.title=w.unavailable?'Mark available':'Mark out / sick';
     av.textContent=w.unavailable?'✕':'✓';
-    av.addEventListener('click',e=>{e.stopPropagation();toggleAvail(w.name);});
+    av.addEventListener('click',e=>{e.stopPropagation();toggleAvailCrews(w.name);});
     el.appendChild(av);
     if(!w.unavailable&&!assigned){
       el.addEventListener('dragstart',e=>{dW=w.name;dFS=null;console.log('dragstart pool crews:',dW);setTimeout(()=>el.classList.add('dragging'),0);e.dataTransfer.effectAllowed='move';});
       el.addEventListener('dragend',()=>{el.classList.remove('dragging');console.log('dragend pool crews');});
-      el.addEventListener('touchstart',e=>{e.preventDefault();ts(e,w.name,null);},{passive:false});
+      el.addEventListener('touchstart',e=>{e.preventDefault();tsCrews(e,w.name,null);},{passive:false});
     }
     pool.appendChild(el);
   }
 
-  st.workers.slice(0,half).forEach(w=>chip(w,p1));
-  st.workers.slice(half).forEach(w=>chip(w,p2));
+  stCrews.workers.slice(0,half).forEach(w=>chip(w,p1));
+  stCrews.workers.slice(half).forEach(w=>chip(w,p2));
 
   [p1,p2].forEach(pool=>{
     pool.addEventListener('dragover',e=>{if(dFS!==null){e.preventDefault();pool.classList.add('drop-target');console.log('dragover pool crews');}});
     pool.addEventListener('dragleave',()=>{pool.classList.remove('drop-target');console.log('dragleave pool crews');});
-    pool.addEventListener('drop',e=>{e.preventDefault();pool.classList.remove('drop-target');console.log('DROP on pool crews:',dW,'from',dFS);if(dW&&dFS!==null){st.assignments[dFS]=st.assignments[dFS].filter(n=>n!==dW);dW=null;dFS=null;save();renderCrews();console.log('unassigned worker crews');}else if(dW&&dFS===null){dW=null;dFS=null;console.log('dropped back in pool crews');}});
+    pool.addEventListener('drop',e=>{e.preventDefault();pool.classList.remove('drop-target');console.log('DROP on pool crews:',dW,'from',dFS);if(dW&&dFS!==null){stCrews.assignments[dFS]=stCrews.assignments[dFS].filter(n=>n!==dW);dW=null;dFS=null;saveCrews();renderCrews();console.log('unassigned worker crews');}else if(dW&&dFS===null){dW=null;dFS=null;console.log('dropped back in pool crews');}});
   });
 }
 
 function renderSlotsCrews(){
   const col=document.getElementById('slotsColCrews');col.innerHTML='';
-  st.slots.forEach(s=>{
-    const asgn=st.assignments[s.id]||[];
-    const outAsgn=asgn.filter(n=>{const w=st.workers.find(x=>x.name===n);return w&&w.unavailable;});
+  stCrews.slots.forEach(s=>{
+    const asgn=stCrews.assignments[s.id]||[];
+    const outAsgn=asgn.filter(n=>{const w=stCrews.workers.find(x=>x.name===n);return w&&w.unavailable;});
     const card=document.createElement('div');card.className='slot-card';card.dataset.time=s.time;card.dataset.slotId=s.id;
 
     const ta=document.createElement('textarea');ta.className='slot-desc';ta.placeholder='add task description...';ta.value=s.desc||'';
-    ta.addEventListener('input',()=>{s.desc=ta.value;autoH(ta);save();});
+    ta.addEventListener('input',()=>{s.desc=ta.value;autoH(ta);saveCrews();});
     ta.addEventListener('dragover',e=>e.stopPropagation());ta.addEventListener('drop',e=>e.stopPropagation());
     card.appendChild(ta);
 
@@ -1106,10 +1168,10 @@ function renderSlotsCrews(){
     const dateInput = document.createElement('input');
     dateInput.type = 'date';
     dateInput.style.cssText = 'font-size:11px;padding:3px 6px;border:0.5px solid var(--border2);border-radius:4px;background:var(--surface2);color:var(--text);font-family:inherit;flex:1;max-width:130px;';
-    dateInput.value = st.slotDates[s.id] || new Date().toISOString().split('T')[0];
+    dateInput.value = stCrews.slotDates[s.id] || new Date().toISOString().split('T')[0];
     dateInput.onchange = () => {
-      st.slotDates[s.id] = dateInput.value;
-      save();
+      stCrews.slotDates[s.id] = dateInput.value;
+      saveCrews();
     };
     hdr.appendChild(dateInput);
 
@@ -1130,12 +1192,12 @@ function renderSlotsCrews(){
 
     const area=document.createElement('div');area.className='slot-workers'+(asgn.length===0?' empty':'');
     asgn.forEach(n=>{
-      const w=st.workers.find(x=>x.name===n);const isOut=w&&w.unavailable;const c=wColor(n);
+      const w=stCrews.workers.find(x=>x.name===n);const isOut=w&&w.unavailable;const c=wColor(n);
       const pill=document.createElement('div');pill.className='assigned-pill'+(isOut?' out-pill':'');pill.draggable=true;
       pill.innerHTML=`<span class="chip-dot" style="background:${isOut?'var(--red)':c};"></span><span>${n}${isOut?' ⚠':''}</span>`;
       pill.addEventListener('dragstart',e=>{dW=n;dFS=s.id;console.log('dragstart slot crews:',dW,'from',dFS);setTimeout(()=>pill.classList.add('dragging'),0);e.dataTransfer.effectAllowed='move';});
       pill.addEventListener('dragend',()=>{pill.classList.remove('dragging');console.log('dragend slot crews');});
-      pill.addEventListener('touchstart',e=>{e.preventDefault();ts(e,n,s.id);},{passive:false});
+      pill.addEventListener('touchstart',e=>{e.preventDefault();tsCrews(e,n,s.id);},{passive:false});
       area.appendChild(pill);
     });
     card.appendChild(area);
@@ -1145,24 +1207,24 @@ function renderSlotsCrews(){
     card.addEventListener('drop',e=>{
       e.preventDefault();card.classList.remove('drag-over');console.log('DROP on slot crews:',dW,'from',dFS);if(!dW)return;
       const slotId=card.dataset.slotId;
-      const w=st.workers.find(x=>x.name===dW);if(w&&w.unavailable){console.log('worker unavailable crews');return;}
-      if(dFS)st.assignments[dFS]=st.assignments[dFS].filter(n=>n!==dW);
-      if(!st.assignments[slotId])st.assignments[slotId]=[];
-      if(!st.assignments[slotId].includes(dW))st.assignments[slotId].push(dW);
-      dW=null;dFS=null;save();renderCrews();console.log('drop success crews');
+      const w=stCrews.workers.find(x=>x.name===dW);if(w&&w.unavailable){console.log('worker unavailable crews');return;}
+      if(dFS)stCrews.assignments[dFS]=stCrews.assignments[dFS].filter(n=>n!==dW);
+      if(!stCrews.assignments[slotId])stCrews.assignments[slotId]=[];
+      if(!stCrews.assignments[slotId].includes(dW))stCrews.assignments[slotId].push(dW);
+      dW=null;dFS=null;saveCrews();renderCrews();console.log('drop success crews');
     });
     area.addEventListener('dragover',e=>{e.preventDefault();card.classList.add('drag-over');});
     area.addEventListener('dragleave',()=>card.classList.remove('drag-over'));
     area.addEventListener('drop',e=>{
       e.preventDefault();card.classList.remove('drag-over');if(!dW)return;
       const slotId=card.dataset.slotId;
-      const w=st.workers.find(x=>x.name===dW);if(w&&w.unavailable)return;
-      if(dFS)st.assignments[dFS]=st.assignments[dFS].filter(n=>n!==dW);
-      if(!st.assignments[slotId])st.assignments[slotId]=[];
-      if(!st.assignments[slotId].includes(dW))st.assignments[slotId].push(dW);
-      dW=null;dFS=null;save();renderCrews();
+      const w=stCrews.workers.find(x=>x.name===dW);if(w&&w.unavailable)return;
+      if(dFS)stCrews.assignments[dFS]=stCrews.assignments[dFS].filter(n=>n!==dW);
+      if(!stCrews.assignments[slotId])stCrews.assignments[slotId]=[];
+      if(!stCrews.assignments[slotId].includes(dW))stCrews.assignments[slotId].push(dW);
+      dW=null;dFS=null;saveCrews();renderCrews();
     });
-    card.addEventListener('touchend',e=>tdSlot(e,card,s.time),{passive:false});
+    card.addEventListener('touchend',e=>tdSlotCrews(e,card,s.time),{passive:false});
 
     // NO WhatsApp/Telegram buttons in Crews tab - this is the key difference!
 
@@ -1173,30 +1235,30 @@ function renderSlotsCrews(){
 function addWorkerCrews(){
   const i=document.getElementById('newWorkerCrews');
   const n=i.value.trim();
-  if(!n||st.workers.find(w=>w.name===n))return;
-  st.workers.push({name:n,phone:'',unavailable:false});
+  if(!n||stCrews.workers.find(w=>w.name===n))return;
+  stCrews.workers.push({name:n,phone:'',unavailable:false});
   i.value='';
-  save();
+  saveCrews();
   renderCrews();
 }
 
 function addSlotCrews(){
   const t=document.getElementById('newSlotTimeCrews').value;
   if(!t||t===''){alert('Please select a time');return;}
-  st.slots.push({id:generateSlotId(),time:t,desc:''});
-  st.slots.sort((a,b)=>tMin(a.time)-tMin(b.time));
-  save();
+  stCrews.slots.push({id:generateSlotId(),time:t,desc:''});
+  stCrews.slots.sort((a,b)=>tMin(a.time)-tMin(b.time));
+  saveCrews();
   renderCrews();
 }
 
 function removeSlotCrews(slotId){
-  const slot=st.slots.find(s=>s.id===slotId);
+  const slot=stCrews.slots.find(s=>s.id===slotId);
   if(!slot)return;
   const time=slot.time;
-  st.slots=st.slots.filter(s=>s.id!==slotId);
-  const otherSlotAtTime=st.slots.find(s=>s.time===time);
-  if(!otherSlotAtTime)delete st.assignments[time];
-  save();
+  stCrews.slots=stCrews.slots.filter(s=>s.id!==slotId);
+  const otherSlotAtTime=stCrews.slots.find(s=>s.time===time);
+  if(!otherSlotAtTime)delete stCrews.assignments[time];
+  saveCrews();
   renderCrews();
 }
 
@@ -1327,6 +1389,24 @@ function ts(e,name,fromSlot){
   document.querySelectorAll('.crew-pool').forEach(p=>p.style.border='2px dashed var(--green)');
 }
 
+// Touch handlers for Crews panel
+function tsCrews(e,name,fromSlot){
+  if(e.touches.length!==1)return;
+  dW=name;dFS=fromSlot;touchDragActive=true;
+  const t=e.touches[0];
+  console.log('touchstart crews:',name,'from',fromSlot);
+  
+  if(tGhost)tGhost.remove();
+  tGhost=document.createElement('div');
+  tGhost.textContent=name;
+  tGhost.style.cssText='position:fixed;z-index:9999;pointer-events:none;background:#1D9E75;color:#fff;padding:4px 10px;border-radius:4px;font-size:12px;opacity:.92;left:'+(t.clientX-30)+'px;top:'+(t.clientY-14)+'px;font-family:system-ui;';
+  document.body.appendChild(tGhost);
+  
+  // Only highlight slots in the crews panel
+  document.querySelectorAll('#panel-crews .slot-card').forEach(c=>c.style.border='2px dashed var(--green)');
+  document.querySelectorAll('#panel-crews .crew-pool').forEach(p=>p.style.border='2px dashed var(--green)');
+}
+
 function tm(e){
   if(!touchDragActive||!tGhost)return;
   e.preventDefault();
@@ -1372,6 +1452,28 @@ function teGlobal(e){
   }
   
   console.log('dropped nowhere valid');
+  dW=null;dFS=null;
+}
+
+// Touch end for Crews panel
+function tdSlotCrews(e,card,time){
+  if(!touchDragActive||!dW)return;
+  e.preventDefault();
+  touchDragActive=false;
+  
+  if(tGhost){tGhost.remove();tGhost=null;}
+  
+  document.querySelectorAll('#panel-crews .slot-card').forEach(c=>c.style.border='');
+  document.querySelectorAll('#panel-crews .crew-pool').forEach(p=>p.style.border='');
+  
+  const w=stCrews.workers.find(x=>x.name===dW);
+  if(w&&w.unavailable){dW=null;dFS=null;return;}
+  
+  const slotId=card.dataset.slotId;
+  if(dFS)stCrews.assignments[dFS]=stCrews.assignments[dFS].filter(n=>n!==dW);
+  if(!stCrews.assignments[slotId])stCrews.assignments[slotId]=[];
+  if(!stCrews.assignments[slotId].includes(dW))stCrews.assignments[slotId].push(dW);
+  saveCrews();renderCrews();
   dW=null;dFS=null;
 }
 
@@ -1684,6 +1786,7 @@ if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.ser
 
 // Initialize: load from server, then render
 async function init() {
+  // Load Schedule panel data
   const serverData = await loadFromServer();
   if (serverData) {
     st = serverData;
@@ -1709,6 +1812,33 @@ async function init() {
         }
       });
     }
+  }
+  
+  // Load Crews panel data - COMPLETELY SEPARATE
+  const crewsData = await loadCrewsFromServer();
+  if (crewsData) {
+    stCrews = crewsData;
+    // Ensure all workers have required fields
+    stCrews.workers.forEach(w=>{
+      if(w.unavailable===undefined)w.unavailable=false;
+      if(w.phone===undefined)w.phone='';
+    });
+    // Ensure slots have IDs
+    stCrews.slots.forEach(s=>{
+      if(!s.id)s.id=generateSlotId();
+    });
+  }
+  // Initialize stCrews if empty (default data already set at declaration)
+  if(stCrews.workers.length===0){
+    console.log('Initializing crews with default data');
+    stCrews.slots=[
+      {id:generateSlotId(),time:"06:00",desc:""},
+      {id:generateSlotId(),time:"08:00",desc:""},
+      {id:generateSlotId(),time:"10:00",desc:""},
+      {id:generateSlotId(),time:"14:00",desc:""},
+      {id:generateSlotId(),time:"18:00",desc:""}
+    ];
+    saveCrews();
   }
   
   // Initialize users FIRST (before checking auto-login)
