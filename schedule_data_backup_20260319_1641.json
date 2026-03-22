@@ -1,0 +1,374 @@
+{
+  "assignments": {
+    "01:00": [
+      "Jorge Jimenez",
+      "Alberto Romero",
+      "Michael Castillo",
+      "Pedro Alverez",
+      "Joseph Reyes",
+      "Benancio Castaneda"
+    ],
+    "21:00": [
+      "Isrrael Jimenuz",
+      "Ruben Munguia",
+      "Arturo Vasqueze",
+      "Guillermo Mercado",
+      "Isaias Fernandez"
+    ],
+    "06:00": [
+      "Colby Selfridge",
+      "Manuel Hernandez",
+      "Manuel Segouia",
+      "Jose  Castillo",
+      "Gideon Fought",
+      "Francisco Beltran",
+      "Brian Army",
+      "Dan Richards"
+    ],
+    "06:01": [
+      "Zack Selfridge",
+      "Devlin  Cisneros",
+      "Edmundo Nunez",
+      "Jason Lewis",
+      "Jose Vasquez",
+      "Isaiah Moreno",
+      "Alexis Camarena"
+    ],
+    "16:00": [
+      "Blake",
+      "Cristian Gonzalez",
+      "Gabriel Gaucin",
+      "Colorado",
+      "Joe Morales",
+      "Hilario Mel\u00e9ndez",
+      "Caleb Selfridge",
+      "Jose P Beltran",
+      "Russel Ginter"
+    ],
+    "16:01": [
+      "Ryan Johnson",
+      "Juan Alvarez Sota",
+      "Bryan Rodriguez",
+      "Justin Galindo",
+      "Carlos Hernandez",
+      "Jason Saracho",
+      "David Nava",
+      "Ronnie P"
+    ],
+    "16:02": [
+      "Joe Robledo",
+      "Ramon Alarcon",
+      "Sergio Del Rio",
+      "Angel Maldonado",
+      "Steve Gomez",
+      "Bryan Mercado",
+      "Koby Ramirez",
+      "Braulio Fierro"
+    ]
+  },
+  "currentUser": "dan richards",
+  "darkMode": false,
+  "messageHeader": "Start Time Llano",
+  "slotDates": {
+    "01:00": "2026-03-21",
+    "14:00": "2026-03-21",
+    "21:00": "2026-03-20",
+    "06:00": "2026-03-20",
+    "06:01": "2026-03-20",
+    "16:00": "2026-03-20",
+    "16:01": "2026-03-20",
+    "16:02": "2026-03-20"
+  },
+  "slots": [
+    {
+      "desc": "DC4-DHD-SOG-1",
+      "time": "01:00"
+    },
+    {
+      "desc": "Misc.",
+      "time": "06:00"
+    },
+    {
+      "time": "06:01",
+      "desc": "Misc."
+    },
+    {
+      "desc": "DC4-DHD-SOG-1",
+      "time": "16:00"
+    },
+    {
+      "time": "16:01",
+      "desc": "DC1-DHB-HK-Pads/Misc."
+    },
+    {
+      "time": "16:02",
+      "desc": "DB-27-TOP"
+    },
+    {
+      "desc": "DC4-DHD-SOG-1",
+      "time": "21:00"
+    }
+  ],
+  "workers": [
+    {
+      "name": "Ramon Alarcon",
+      "phone": "+18066606878",
+      "unavailable": false
+    },
+    {
+      "name": "Juan Alvarez Sota",
+      "phone": "8066739669",
+      "unavailable": false
+    },
+    {
+      "name": "Pedro Alverez",
+      "phone": "2104497341",
+      "unavailable": false
+    },
+    {
+      "name": "Brian Army",
+      "phone": "5038519657",
+      "unavailable": false
+    },
+    {
+      "name": "Francisco Beltran",
+      "phone": "6024734980",
+      "unavailable": false
+    },
+    {
+      "name": "Jose P Beltran",
+      "phone": "6237348412",
+      "unavailable": false
+    },
+    {
+      "name": "Blake",
+      "phone": "4253736539",
+      "unavailable": false
+    },
+    {
+      "name": "Alexis Camarena",
+      "phone": "5622917679",
+      "unavailable": false
+    },
+    {
+      "name": "Benancio Castaneda",
+      "phone": "2104228823",
+      "unavailable": false
+    },
+    {
+      "name": "Jose  Castillo",
+      "phone": "8065485084",
+      "unavailable": false
+    },
+    {
+      "name": "Michael Castillo",
+      "phone": "8067817697",
+      "unavailable": false
+    },
+    {
+      "name": "Devlin  Cisneros",
+      "phone": "8064180152",
+      "unavailable": false
+    },
+    {
+      "name": "Colorado",
+      "phone": "8062390011",
+      "unavailable": false
+    },
+    {
+      "name": "Sergio Del Rio",
+      "phone": "8065982446",
+      "unavailable": false
+    },
+    {
+      "name": "Isaias Fernandez",
+      "phone": "7267775102",
+      "unavailable": false
+    },
+    {
+      "name": "Braulio Fierro",
+      "phone": "8062311807",
+      "unavailable": false
+    },
+    {
+      "name": "Gideon Fought",
+      "phone": "8062398619",
+      "unavailable": false
+    },
+    {
+      "name": "Justin Galindo",
+      "phone": "8065236587",
+      "unavailable": false
+    },
+    {
+      "name": "Gabriel Gaucin",
+      "phone": "8063443685",
+      "unavailable": false
+    },
+    {
+      "name": "Jonathan Gomez",
+      "phone": "8064486961",
+      "unavailable": true
+    },
+    {
+      "name": "Steve Gomez",
+      "phone": "+18069394433",
+      "unavailable": false
+    },
+    {
+      "name": "Cristian Gonzalez",
+      "phone": "+19132632323",
+      "unavailable": false
+    },
+    {
+      "name": "Carlos Hernandez",
+      "phone": "6029188443",
+      "unavailable": false
+    },
+    {
+      "name": "Manuel Hernandez",
+      "phone": "+18066907882",
+      "unavailable": false
+    },
+    {
+      "name": "Jorge Jimenez",
+      "phone": "+15753860714",
+      "unavailable": false
+    },
+    {
+      "name": "Isrrael Jimenuz",
+      "phone": "+15758055619",
+      "unavailable": false
+    },
+    {
+      "name": "Jason Lewis",
+      "phone": "+18177435134",
+      "unavailable": false
+    },
+    {
+      "name": "Angel Maldonado",
+      "phone": "8067032163",
+      "unavailable": false
+    },
+    {
+      "name": "Hilario Mel\u00e9ndez",
+      "phone": "+18068917040",
+      "unavailable": false
+    },
+    {
+      "name": "Bryan Mercado",
+      "phone": "8065235472",
+      "unavailable": false
+    },
+    {
+      "name": "Guillermo Mercado",
+      "phone": "2143347066",
+      "unavailable": false
+    },
+    {
+      "name": "Joe Morales",
+      "phone": "8064002368",
+      "unavailable": false
+    },
+    {
+      "name": "Isaiah Moreno",
+      "phone": "8067824668",
+      "unavailable": false
+    },
+    {
+      "name": "Ruben Munguia",
+      "phone": "+18312403946",
+      "unavailable": false
+    },
+    {
+      "name": "David Nava",
+      "phone": "6024917462",
+      "unavailable": false
+    },
+    {
+      "name": "Edmundo Nunez",
+      "phone": "8064108033",
+      "unavailable": false
+    },
+    {
+      "name": "Ronnie P",
+      "phone": "+18069291208",
+      "unavailable": false
+    },
+    {
+      "name": "Koby Ramirez",
+      "phone": "+17373512416",
+      "unavailable": false
+    },
+    {
+      "name": "Joseph Reyes",
+      "phone": "5206779013",
+      "unavailable": false
+    },
+    {
+      "name": "Joe Robledo",
+      "phone": "8066393818",
+      "unavailable": false
+    },
+    {
+      "name": "Bryan Rodriguez",
+      "phone": "8063412977",
+      "unavailable": false
+    },
+    {
+      "name": "Alberto Romero",
+      "phone": "2815711052",
+      "unavailable": false
+    },
+    {
+      "name": "Russel Ginter",
+      "phone": "+13609478057",
+      "unavailable": false
+    },
+    {
+      "name": "Ryan Johnson",
+      "phone": "+14253679016",
+      "unavailable": false
+    },
+    {
+      "name": "Jason Saracho",
+      "phone": "8065164891",
+      "unavailable": false
+    },
+    {
+      "name": "Manuel Segouia",
+      "phone": "8066808667",
+      "unavailable": false
+    },
+    {
+      "name": "Caleb Selfridge",
+      "phone": "+13609313652",
+      "unavailable": false
+    },
+    {
+      "name": "Colby Selfridge",
+      "phone": "13603340041",
+      "unavailable": false
+    },
+    {
+      "name": "Zack Selfridge",
+      "phone": "+13603489153",
+      "unavailable": false
+    },
+    {
+      "name": "Jose Vasquez",
+      "phone": "4243588862",
+      "unavailable": false
+    },
+    {
+      "name": "Arturo Vasqueze",
+      "phone": "5035107039",
+      "unavailable": false
+    },
+    {
+      "name": "Dan Richards",
+      "phone": "",
+      "unavailable": false
+    }
+  ]
+}
