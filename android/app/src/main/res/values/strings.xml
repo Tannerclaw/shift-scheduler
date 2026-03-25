@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CrewLock</string>
+    <string name="title_activity_main">CrewLock</string>
+    <string name="package_name">com.clawbox.crewlock</string>
+    <string name="custom_url_scheme">com.clawbox.crewlock</string>
+</resources>

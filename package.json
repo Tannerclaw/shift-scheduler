@@ -1,0 +1,28 @@
+{
+  "name": "shift-scheduler-sandbox",
+  "version": "1.0.0",
+  "description": "A Progressive Web App (PWA) for scheduling concrete finishing crews across multiple shifts.",
+  "main": "whatsapp-fix.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tannerclaw/shift-scheduler.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/tannerclaw/shift-scheduler/issues"
+  },
+  "homepage": "https://github.com/tannerclaw/shift-scheduler#readme",
+  "dependencies": {
+    "@capacitor/android": "^8.2.0",
+    "@capacitor/cli": "^8.2.0",
+    "@capacitor/core": "^8.2.0",
+    "@capacitor/ios": "^8.2.0",
+    "@capacitor/push-notifications": "^8.0.2"
+  }
+}
