@@ -1,0 +1,442 @@
+<!-- NEW CREWS PANEL - Table-based design -->
+<div class="panel" id="panel-crews">
+  <div class="print-hdr">
+    <h1>CrewLock - Crews</h1>
+    <p id="crewsPrintDate"></p>
+  </div>
+  
+  <!-- Crew Builder Layout -->
+  <div class="crews-layout">
+    <!-- Left: Available Workers Pool -->
+    <div class="workers-pool">
+      <h3>Available Workers</h3>
+      <div class="pool-instructions">Drag workers to crews</div>
+      <div class="available-workers" id="availableWorkersPool">
+        <!-- Workers synced from main roster -->
+      </div>
+    </div>
+    
+    <!-- Right: Crew Tables -->
+    <div class="crews-container">
+      <div class="crews-header">
+        <h3>Crew Assignments</h3>
+        <button class="add-crew-btn" onclick="addNewCrew()">+ Add Crew</button>
+      </div>
+      
+      <div class="crews-list" id="crewsList">
+        <!-- Dynamic crew tables -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Crews Panel Styles */
+  .crews-layout {
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    gap: 20px;
+    padding: 15px;
+  }
+  
+  .workers-pool {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    padding: 15px;
+  }
+  
+  .workers-pool h3 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: var(--text);
+  }
+  
+  .pool-instructions {
+    font-size: 11px;
+    color: var(--text2);
+    margin-bottom: 12px;
+    font-style: italic;
+  }
+  
+  .available-workers {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  .available-worker {
+    background: var(--surface2);
+    border: 0.5px solid var(--border2);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 12px;
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .available-worker:hover {
+    border-color: var(--primary);
+  }
+  
+  .available-worker.dragging {
+    opacity: 0.5;
+  }
+  
+  .crews-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .crews-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .crews-header h3 {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text);
+  }
+  
+  .add-crew-btn {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  
+  .crews-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 15px;
+  }
+  
+  .crew-table {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .crew-header {
+    background: var(--primary);
+    color: #fff;
+    padding: 10px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .crew-name {
+    font-weight: 600;
+    font-size: 13px;
+    background: transparent;
+    border: none;
+    color: #fff;
+    width: 100%;
+    outline: none;
+  }
+  
+  .crew-name::placeholder {
+    color: rgba(255,255,255,0.6);
+  }
+  
+  .remove-crew-btn {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: #fff;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 10px;
+    cursor: pointer;
+  }
+  
+  .crew-members {
+    min-height: 100px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  .crew-members.drag-over {
+    background: var(--primary-light);
+  }
+  
+  .crew-worker {
+    background: var(--surface2);
+    border: 0.5px solid var(--border2);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .remove-worker-btn {
+    background: var(--error);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 9px;
+    cursor: pointer;
+  }
+  
+  .empty-crew {
+    text-align: center;
+    color: var(--text3);
+    font-size: 11px;
+    padding: 20px;
+    font-style: italic;
+  }
+  
+  @media (max-width: 768px) {
+    .crews-layout {
+      grid-template-columns: 1fr;
+    }
+    
+    .workers-pool {
+      order: 2;
+    }
+    
+    .crews-container {
+      order: 1;
+    }
+  }
+</style>
+
+<script>
+  // Crews data structure
+  let crewsData = {
+    crews: [
+      { id: 'crew_1', name: 'Crew 1', members: [] },
+      { id: 'crew_2', name: 'Crew 2', members: [] }
+    ],
+    availableWorkers: []
+  };
+  
+  // Initialize crews panel
+  function initCrews() {
+    // Sync workers from main schedule
+    syncWorkersToCrews();
+    renderCrewsPanel();
+  }
+  
+  // Sync workers from main st.workers
+  function syncWorkersToCrews() {
+    // Get workers that aren't already in a crew
+    const assignedWorkers = new Set();
+    crewsData.crews.forEach(crew => {
+      crew.members.forEach(member => assignedWorkers.add(member.name));
+    });
+    
+    // Available workers = all workers not assigned to crews
+    crewsData.availableWorkers = st.workers.filter(w => !assignedWorkers.has(w.name));
+  }
+  
+  // Render the entire crews panel
+  function renderCrewsPanel() {
+    renderAvailableWorkers();
+    renderCrewTables();
+  }
+  
+  // Render available workers pool
+  function renderAvailableWorkers() {
+    const pool = document.getElementById('availableWorkersPool');
+    pool.innerHTML = '';
+    
+    if (crewsData.availableWorkers.length === 0) {
+      pool.innerHTML = '<div class="empty-crew">All workers assigned</div>';
+      return;
+    }
+    
+    crewsData.availableWorkers.forEach(worker => {
+      const el = document.createElement('div');
+      el.className = 'available-worker';
+      el.draggable = true;
+      el.dataset.name = worker.name;
+      
+      const col = wColor(worker.name);
+      el.innerHTML = `
+        <span class="chip-dot" style="background:${col};width:8px;height:8px;border-radius:50%;"></span>
+        <span>${worker.name}</span>
+      `;
+      
+      // Drag events
+      el.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('worker', worker.name);
+        el.classList.add('dragging');
+      });
+      
+      el.addEventListener('dragend', () => {
+        el.classList.remove('dragging');
+      });
+      
+      pool.appendChild(el);
+    });
+  }
+  
+  // Render crew tables
+  function renderCrewTables() {
+    const container = document.getElementById('crewsList');
+    container.innerHTML = '';
+    
+    crewsData.crews.forEach(crew => {
+      const crewEl = document.createElement('div');
+      crewEl.className = 'crew-table';
+      
+      // Crew header
+      const header = document.createElement('div');
+      header.className = 'crew-header';
+      header.innerHTML = `
+        <input type="text" class="crew-name" value="${crew.name}" 
+               onchange="renameCrew('${crew.id}', this.value)" 
+               placeholder="Crew Name">
+        <button class="remove-crew-btn" onclick="removeCrew('${crew.id}')">Remove</button>
+      `;
+      
+      // Crew members area
+      const membersArea = document.createElement('div');
+      membersArea.className = 'crew-members';
+      membersArea.dataset.crewId = crew.id;
+      
+      // Drop events
+      membersArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        membersArea.classList.add('drag-over');
+      });
+      
+      membersArea.addEventListener('dragleave', () => {
+        membersArea.classList.remove('drag-over');
+      });
+      
+      membersArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        membersArea.classList.remove('drag-over');
+        const workerName = e.dataTransfer.getData('worker');
+        if (workerName) {
+          assignWorkerToCrew(workerName, crew.id);
+        }
+      });
+      
+      // Render members
+      if (crew.members.length === 0) {
+        membersArea.innerHTML = '<div class="empty-crew">Drag workers here</div>';
+      } else {
+        crew.members.forEach(member => {
+          const memberEl = document.createElement('div');
+          memberEl.className = 'crew-worker';
+          const col = wColor(member.name);
+          memberEl.innerHTML = `
+            <span style="display:flex;align-items:center;gap:6px;">
+              <span style="background:${col};width:8px;height:8px;border-radius:50%;"></span>
+              ${member.name}
+            </span>
+            <button class="remove-worker-btn" onclick="removeWorkerFromCrew('${member.name}', '${crew.id}')">×</button>
+          `;
+          membersArea.appendChild(memberEl);
+        });
+      }
+      
+      crewEl.appendChild(header);
+      crewEl.appendChild(membersArea);
+      container.appendChild(crewEl);
+    });
+  }
+  
+  // Add new crew
+  function addNewCrew() {
+    const newId = 'crew_' + Date.now();
+    crewsData.crews.push({
+      id: newId,
+      name: `Crew ${crewsData.crews.length + 1}`,
+      members: []
+    });
+    renderCrewsPanel();
+  }
+  
+  // Remove crew
+  function removeCrew(crewId) {
+    if (crewsData.crews.length <= 1) {
+      alert('Must have at least one crew');
+      return;
+    }
+    
+    // Move members back to available
+    const crew = crewsData.crews.find(c => c.id === crewId);
+    if (crew) {
+      crew.members.forEach(member => {
+        const worker = st.workers.find(w => w.name === member.name);
+        if (worker) crewsData.availableWorkers.push(worker);
+      });
+    }
+    
+    crewsData.crews = crewsData.crews.filter(c => c.id !== crewId);
+    renderCrewsPanel();
+  }
+  
+  // Rename crew
+  function renameCrew(crewId, newName) {
+    const crew = crewsData.crews.find(c => c.id === crewId);
+    if (crew) {
+      crew.name = newName;
+    }
+  }
+  
+  // Assign worker to crew
+  function assignWorkerToCrew(workerName, crewId) {
+    // Remove from available
+    const workerIndex = crewsData.availableWorkers.findIndex(w => w.name === workerName);
+    if (workerIndex === -1) return;
+    
+    const worker = crewsData.availableWorkers[workerIndex];
+    crewsData.availableWorkers.splice(workerIndex, 1);
+    
+    // Add to crew
+    const crew = crewsData.crews.find(c => c.id === crewId);
+    if (crew) {
+      crew.members.push(worker);
+    }
+    
+    renderCrewsPanel();
+  }
+  
+  // Remove worker from crew
+  function removeWorkerFromCrew(workerName, crewId) {
+    const crew = crewsData.crews.find(c => c.id === crewId);
+    if (!crew) return;
+    
+    // Remove from crew
+    crew.members = crew.members.filter(m => m.name !== workerName);
+    
+    // Add back to available
+    const worker = st.workers.find(w => w.name === workerName);
+    if (worker) {
+      crewsData.availableWorkers.push(worker);
+    }
+    
+    renderCrewsPanel();
+  }
+  
+  // Replace old renderCrews function
+  function renderCrews() {
+    initCrews();
+  }
+  
+  // Initialize on page load
+  document.addEventListener('DOMContentLoaded', () => {
+    if (document.getElementById('panel-crews').classList.contains('active')) {
+      initCrews();
+    }
+  });
+</script>

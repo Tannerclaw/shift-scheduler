@@ -1,11 +1,11 @@
 {
-  "name": "Concrete Finisher Shift Scheduler",
-  "short_name": "Shift Scheduler",
-  "description": "Drag-and-drop shift scheduler for concrete finishing crews",
+  "name": "CrewLock",
+  "short_name": "CrewLock",
+  "description": "Drag-and-drop scheduler for work crews",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#f5f3ef",
-  "theme_color": "#1D9E75",
+  "background_color": "#2B2B27",
+  "theme_color": "#E8795A",
   "orientation": "any",
   "icons": [
     {

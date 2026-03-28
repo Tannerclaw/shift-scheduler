@@ -125,7 +125,7 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
 .panel{display:none;}.panel.active{display:block;}
 
 /* Controls */
-.settings-strip{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.settings-strip{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;}
 .ctrl-card{background:var(--surface);border:0.5px solid var(--border);border-radius:6px;padding:8px 10px;box-shadow:var(--shadow);}
 .ctrl-card label{font-size:10px;color:var(--text2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;}
 .ctrl-row{display:flex;gap:5px;}
@@ -133,6 +133,36 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
 .ctrl-row input:focus{outline:none;border-color:var(--primary);}
 .add-btn{font-size:13px;padding:5px 12px;cursor:pointer;background:var(--primary);color:#fff;border:none;border-radius:6px;font-weight:500;transition:filter .15s;}
 .add-btn:active{filter:brightness(.88);}
+
+/* ── CREWS BUILDER ── */
+.crews-builder{display:grid;grid-template-columns:350px 1fr;gap:15px;height:calc(100% - 60px);}
+.crews-worker-pool{background:var(--surface);border:0.5px solid var(--border);border-radius:8px;padding:12px;display:flex;flex-direction:column;}
+.crews-worker-pool h3{margin:0 0 6px 0;font-size:13px;color:var(--text);}
+.crew-help{font-size:10px;color:var(--text2);margin-bottom:10px;font-style:italic;}
+.crews-pool-items{display:grid;grid-template-columns:1fr 1fr;gap:3px;align-content:start;}
+.crews-pool-worker{background:var(--surface);border:0.5px solid var(--border2);border-radius:4px;padding:3px 5px;font-size:11px;font-weight:500;color:var(--text);cursor:grab;user-select:none;display:flex;align-items:center;gap:4px;overflow:hidden;transition:background .2s,border-color .15s,opacity .15s;}
+.crews-pool-worker:hover{border-color:var(--primary);}
+.crews-pool-worker.dragging{opacity:0.5;}
+.crews-pool-worker.assigned{background:var(--surface2);color:var(--text2);border-style:dashed;cursor:default;}
+.crews-pool-worker.assigned .chip-dot{background:var(--text3) !important;}
+.crews-pool-items.drop-target{background:var(--primary-light);border:0.5px dashed var(--primary);border-radius:8px;}
+.crews-area{display:flex;flex-direction:column;gap:12px;}
+.crews-toolbar{display:flex;justify-content:space-between;align-items:center;padding:0 4px;}
+.crews-toolbar h3{margin:0;font-size:14px;color:var(--text);}
+.add-crew-btn{background:var(--primary);color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:12px;cursor:pointer;font-weight:500;}
+#dynamicCrewsList{display:grid;grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));gap:12px;padding:4px;align-items:start;}
+.crew-box{background:var(--surface);border:0.5px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;}
+.crew-box-header{background:var(--primary);color:#fff;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;}
+.crew-name-input{background:transparent;border:none;color:#fff;font-weight:600;font-size:13px;width:100%;outline:none;}
+.crew-name-input::placeholder{color:rgba(255,255,255,0.6);}
+.remove-crew-btn{background:rgba(255,255,255,0.2);border:none;color:#fff;border-radius:4px;padding:4px 8px;font-size:10px;cursor:pointer;}
+.crew-members{min-height:60px;padding:10px;display:flex;flex-direction:column;gap:6px;flex:1;}
+.crew-members.drag-over{background:var(--primary-light);}
+.crew-box{display:flex;flex-direction:column;background:var(--surface);border:0.5px solid var(--border);border-radius:8px;overflow:hidden;height:auto;}
+.crew-box-header{background:var(--primary);color:#fff;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;}
+.crew-member-row{background:var(--surface2);border:0.5px solid var(--border2);border-radius:4px;padding:3px 5px;font-size:11px;font-weight:500;display:flex;justify-content:space-between;align-items:center;}
+.remove-member-btn{background:var(--error);color:#fff;border:none;border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer;}
+.empty-crew-msg{text-align:center;color:var(--text3);font-size:11px;padding:20px;font-style:italic;}
 
 /* Grid */
 .main-grid{display:grid;grid-template-columns:1fr;gap:10px;min-width:0;}
@@ -143,6 +173,7 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
 @media screen and (max-width: 619px) {
   .main-grid{grid-template-columns:1fr!important;}
   .crew-grid{grid-template-columns:1fr;}
+  .settings-strip{grid-template-columns:1fr!important;}
 }
 .section-head{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
 
@@ -441,6 +472,10 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
           <div class="ctrl-row"><input id="newWorker" placeholder="Full name"/><button class="add-btn" onclick="addWorker()">+</button></div>
         </div>
         <div class="ctrl-card">
+          <label>Message Header</label>
+          <div class="ctrl-row"><input id="messageHeaderInput" placeholder="Start Times (blank for none)"/><button class="hdr-btn" onclick="updateMessageHeader()" style="background:var(--accent);color:#000;">Set</button></div>
+        </div>
+        <div class="ctrl-card">
           <label>Add time slot</label>
           <div class="ctrl-row"><input type="time" id="newSlotTime" value="14:00"/><button class="add-btn" onclick="addSlot()">+</button></div>
         </div>
@@ -488,30 +523,24 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
     <!-- CREWS -->
     <div class="panel" id="panel-crews">
       <div class="print-hdr">
-        <h1>CrewLock</h1>
+        <h1>CrewLock - Crews</h1>
         <p id="crewsPrintDate"></p>
       </div>
-      <div class="settings-strip">
-        <div class="ctrl-card">
-          <label>Add worker</label>
-          <div class="ctrl-row"><input id="newWorkerCrews" placeholder="Full name"/><button class="add-btn" onclick="addWorkerCrews()">+</button></div>
+      
+      <!-- NEW Crew Builder Layout -->
+      <div class="crews-builder">
+        <div class="crews-worker-pool">
+          <h3>Available Workers</h3>
+          <p class="crew-help">Drag workers to crews below</p>
+          <div id="crewsWorkerPool"></div>
         </div>
-        <div class="ctrl-card">
-          <label>Add time slot</label>
-          <div class="ctrl-row"><input type="time" id="newSlotTimeCrews" value="14:00"/><button class="add-btn" onclick="addSlotCrews()">+</button></div>
-        </div>
-      </div>
-      <div class="main-grid">
-        <div>
-          <p class="section-head">Workers <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:9px;"> · tap ✓ to mark out</span></p>
-          <div class="crew-grid">
-            <div class="crew-pool" id="crewPool1Crews"></div>
-            <div class="crew-pool" id="crewPool2Crews"></div>
+        
+        <div class="crews-area">
+          <div class="crews-toolbar">
+            <h3>Crews</h3>
+            <button class="add-crew-btn" onclick="addCrew()">+ Add Crew</button>
           </div>
-        </div>
-        <div>
-          <p class="section-head">Time Slots</p>
-          <div class="slots-col" id="slotsColCrews"></div>
+          <div id="dynamicCrewsList"></div>
         </div>
       </div>
     </div>
@@ -1653,187 +1682,198 @@ function renderSlots(){
 }
 
 // ── Crews Tab Functions ───────────────────────────────────────────────────
+// NEW CREWS BUILDER - Replaces old function
 function renderCrews(){
-  renderPoolsCrews();
-  renderSlotsCrews();
-}
-
-// Helper for stCrews - find which slot a worker is assigned to
-function wSlotCrews(n){
-  for(const slotId in stCrews.assignments)if(stCrews.assignments[slotId]?.includes(n))return slotId;
-  return null;
-}
-
-// Toggle availability in crews panel
-function toggleAvailCrews(name){
-  const w=stCrews.workers.find(x=>x.name===name);
-  if(w){w.unavailable=!w.unavailable;saveCrews();renderCrews();}
-}
-
-function renderPoolsCrews(){
-  const p1=document.getElementById('crewPool1Crews'),p2=document.getElementById('crewPool2Crews');
-  p1.innerHTML='';p2.innerHTML='';
-  const half=Math.ceil(stCrews.workers.length/2);
-
-  function chip(w,pool){
-    const slotId=wSlotCrews(w.name),assigned=slotId!==null;
-    const slot=assigned?stCrews.slots.find(s=>s.id===slotId):null;
-    const slotTime=slot?slot.time:null;
-    const el=document.createElement('div');
-    el.className='worker-chip'+(w.unavailable?' unavailable':assigned?' assigned':'');
-    el.draggable=!w.unavailable&&!assigned;
-    const col=wColor(w.name);
-    el.innerHTML=`<span class="chip-dot" style="background:${w.unavailable?'var(--error)':assigned?'var(--text3)':col};"></span><span class="chip-name">${w.name}</span>`;
-    const av=document.createElement('span');
-    av.className='avail-btn'+(w.unavailable?' out':'');
-    av.title=w.unavailable?'Mark available':'Mark out / sick';
-    av.textContent=w.unavailable?'✕':'✓';
-    av.addEventListener('click',e=>{e.stopPropagation();toggleAvailCrews(w.name);});
-    el.appendChild(av);
-    if(!w.unavailable&&!assigned){
-      el.addEventListener('dragstart',e=>{dW=w.name;dFS=null;console.log('dragstart pool crews:',dW);setTimeout(()=>el.classList.add('dragging'),0);e.dataTransfer.effectAllowed='move';});
-      el.addEventListener('dragend',()=>{el.classList.remove('dragging');console.log('dragend pool crews');});
-      el.addEventListener('touchstart',e=>{e.preventDefault();tsCrews(e,w.name,null);},{passive:false});
-    }
-    pool.appendChild(el);
-  }
-
-  stCrews.workers.slice(0,half).forEach(w=>chip(w,p1));
-  stCrews.workers.slice(half).forEach(w=>chip(w,p2));
-
-  [p1,p2].forEach(pool=>{
-    pool.addEventListener('dragover',e=>{if(dFS!==null){e.preventDefault();pool.classList.add('drop-target');console.log('dragover pool crews');}});
-    pool.addEventListener('dragleave',()=>{pool.classList.remove('drop-target');console.log('dragleave pool crews');});
-    pool.addEventListener('drop',e=>{e.preventDefault();pool.classList.remove('drop-target');console.log('DROP on pool crews:',dW,'from',dFS);if(dW&&dFS!==null){stCrews.assignments[dFS]=stCrews.assignments[dFS].filter(n=>n!==dW);dW=null;dFS=null;saveCrews();renderCrews();console.log('unassigned worker crews');}else if(dW&&dFS===null){dW=null;dFS=null;console.log('dropped back in pool crews');}});
-  });
-}
-
-function renderSlotsCrews(){
-  const col=document.getElementById('slotsColCrews');col.innerHTML='';
-  stCrews.slots.forEach(s=>{
-    const asgn=stCrews.assignments[s.id]||[];
-    const outAsgn=asgn.filter(n=>{const w=stCrews.workers.find(x=>x.name===n);return w&&w.unavailable;});
-    const card=document.createElement('div');card.className='slot-card';card.dataset.time=s.time;card.dataset.slotId=s.id;
-
-    const hdr=document.createElement('div');hdr.className='slot-header';
-    hdr.style.cssText = 'display:flex;align-items:center;gap:8px;';
-
-    // Date picker FIRST (left side)
-    const dateInput = document.createElement('input');
-    dateInput.type = 'date';
-    dateInput.style.cssText = 'font-size:11px;padding:3px 6px;border:0.5px solid var(--border2);border-radius:4px;background:var(--surface2);color:var(--text);font-family:inherit;flex:1;max-width:130px;';
-    dateInput.value = stCrews.slotDates[s.id] || new Date().toISOString().split('T')[0];
-    dateInput.onchange = () => {
-      stCrews.slotDates[s.id] = dateInput.value;
-      // Re-sort by date then time
-      stCrews.slots.sort((a,b)=>{
-        const dateA = stCrews.slotDates[a.id] || new Date().toISOString().split('T')[0];
-        const dateB = stCrews.slotDates[b.id] || new Date().toISOString().split('T')[0];
-        if(dateA !== dateB) return dateA.localeCompare(dateB);
-        return tMin(a.time)-tMin(b.time);
-      });
-      saveCrews();
-      renderCrews();
+  // Define crews functions if not already defined
+  if (typeof initCrews === 'undefined') {
+    window.crewsBuilderData = {
+      crews: [
+        { id: 'crew_1', name: 'Crew 1', members: [] },
+        { id: 'crew_2', name: 'Crew 2', members: [] }
+      ],
+      availableWorkers: []
     };
-    hdr.appendChild(dateInput);
-
-    // Time display (after date)
-    const timeSpan = document.createElement('span');
-    timeSpan.className = 'slot-time';
-    timeSpan.innerHTML = `${tStr(tMin(s.time))}${outAsgn.length?`<span class="unavail-warn">⚠ ${outAsgn.length} out</span>`:''}`;
-    hdr.appendChild(timeSpan);
-
-    // Remove button
-    const rmBtn = document.createElement('button');
-    rmBtn.className = 'slot-rm';
-    rmBtn.textContent = '✕';
-    rmBtn.onclick = () => removeSlotCrews(s.id);
-    hdr.appendChild(rmBtn);
-
-    card.appendChild(hdr);
-
-    // Task description (now after header)
-    const ta=document.createElement('textarea');ta.className='slot-desc';ta.placeholder='add task description...';ta.value=s.desc||'';
-    ta.addEventListener('input',()=>{s.desc=ta.value;autoH(ta);saveCrews();});
-    ta.addEventListener('dragover',e=>e.stopPropagation());ta.addEventListener('drop',e=>e.stopPropagation());
-    card.appendChild(ta);
-
-    const area=document.createElement('div');area.className='slot-workers'+(asgn.length===0?' empty':'');
-    asgn.forEach(n=>{
-      const w=stCrews.workers.find(x=>x.name===n);const isOut=w&&w.unavailable;const c=wColor(n);
-      const pill=document.createElement('div');pill.className='assigned-pill'+(isOut?' out-pill':'');pill.draggable=true;
-      pill.innerHTML=`<span class="chip-dot" style="background:${isOut?'var(--error)':c};"></span><span>${n}${isOut?' ⚠':''}</span>`;
-      pill.addEventListener('dragstart',e=>{dW=n;dFS=s.id;console.log('dragstart slot crews:',dW,'from',dFS);setTimeout(()=>pill.classList.add('dragging'),0);e.dataTransfer.effectAllowed='move';});
-      pill.addEventListener('dragend',()=>{pill.classList.remove('dragging');console.log('dragend slot crews');});
-      pill.addEventListener('touchstart',e=>{e.preventDefault();tsCrews(e,n,s.id);},{passive:false});
-      area.appendChild(pill);
-    });
-    card.appendChild(area);
-
-    card.addEventListener('dragover',e=>{e.preventDefault();card.classList.add('drag-over');console.log('dragover slot crews');});
-    card.addEventListener('dragleave',()=>{card.classList.remove('drag-over');console.log('dragleave slot crews');});
-    card.addEventListener('drop',e=>{
-      e.preventDefault();card.classList.remove('drag-over');console.log('DROP on slot crews:',dW,'from',dFS);if(!dW)return;
-      const slotId=card.dataset.slotId;
-      const w=stCrews.workers.find(x=>x.name===dW);if(w&&w.unavailable){console.log('worker unavailable crews');return;}
-      if(dFS)stCrews.assignments[dFS]=stCrews.assignments[dFS].filter(n=>n!==dW);
-      if(!stCrews.assignments[slotId])stCrews.assignments[slotId]=[];
-      if(!stCrews.assignments[slotId].includes(dW))stCrews.assignments[slotId].push(dW);
-      dW=null;dFS=null;saveCrews();renderCrews();console.log('drop success crews');
-    });
-    area.addEventListener('dragover',e=>{e.preventDefault();card.classList.add('drag-over');});
-    area.addEventListener('dragleave',()=>card.classList.remove('drag-over'));
-    area.addEventListener('drop',e=>{
-      e.preventDefault();card.classList.remove('drag-over');if(!dW)return;
-      const slotId=card.dataset.slotId;
-      const w=stCrews.workers.find(x=>x.name===dW);if(w&&w.unavailable)return;
-      if(dFS)stCrews.assignments[dFS]=stCrews.assignments[dFS].filter(n=>n!==dW);
-      if(!stCrews.assignments[slotId])stCrews.assignments[slotId]=[];
-      if(!stCrews.assignments[slotId].includes(dW))stCrews.assignments[slotId].push(dW);
-      dW=null;dFS=null;saveCrews();renderCrews();
-    });
-    card.addEventListener('touchend',e=>tdSlotCrews(e,card,s.time),{passive:false});
-
-    // NO WhatsApp/Telegram buttons in Crews tab - this is the key difference!
-
-    col.appendChild(card);if(s.desc)autoH(ta);
-  });
-}
-
-function addWorkerCrews(){
-  const i=document.getElementById('newWorkerCrews');
-  const n=i.value.trim();
-  if(!n||stCrews.workers.find(w=>w.name===n))return;
-  stCrews.workers.push({name:n,phone:'',unavailable:false});
-  i.value='';
-  saveCrews();
-  renderCrews();
-}
-
-function addSlotCrews(){
-  const t=document.getElementById('newSlotTimeCrews').value;
-  if(!t||t===''){alert('Please select a time');return;}
-  stCrews.slots.push({id:generateSlotId(),time:t,desc:''});
-  // Sort by date first, then by time
-  stCrews.slots.sort((a,b)=>{
-    const dateA = stCrews.slotDates[a.id] || new Date().toISOString().split('T')[0];
-    const dateB = stCrews.slotDates[b.id] || new Date().toISOString().split('T')[0];
-    if(dateA !== dateB) return dateA.localeCompare(dateB);
-    return tMin(a.time)-tMin(b.time);
-  });
-  saveCrews();
-  renderCrews();
-}
-
-function removeSlotCrews(slotId){
-  const slot=stCrews.slots.find(s=>s.id===slotId);
-  if(!slot)return;
-  const time=slot.time;
-  stCrews.slots=stCrews.slots.filter(s=>s.id!==slotId);
-  const otherSlotAtTime=stCrews.slots.find(s=>s.time===time);
-  if(!otherSlotAtTime)delete stCrews.assignments[time];
-  saveCrews();
-  renderCrews();
+    
+    window.initCrews = function() {
+      const assigned = new Set();
+      crewsBuilderData.crews.forEach(crew => {
+        if (crew.members) crew.members.forEach(m => assigned.add(m.name));
+      });
+      crewsBuilderData.availableWorkers = st.workers.filter(w => !assigned.has(w.name));
+      renderCrewsPool();
+      renderCrewsList();
+    };
+    
+    window.renderCrewsPool = function() {
+      const pool = document.getElementById('crewsWorkerPool');
+      if (!pool) return;
+      pool.innerHTML = '';
+      
+      // Get all assigned workers
+      const assignedWorkers = new Set();
+      crewsBuilderData.crews.forEach(crew => {
+        if (crew.members) crew.members.forEach(m => assignedWorkers.add(m.name));
+      });
+      
+      // Show ALL workers, styled based on assignment
+      if (st.workers.length === 0) {
+        pool.innerHTML = '<div class="empty-crew-msg">No workers in roster</div>';
+        return;
+      }
+      
+      const container = document.createElement('div');
+      container.className = 'crews-pool-items';
+      
+      // Add drop handlers to container (drag back to unassign)
+      container.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        container.classList.add('drop-target');
+      });
+      container.addEventListener('dragleave', () => {
+        container.classList.remove('drop-target');
+      });
+      container.addEventListener('drop', (e) => {
+        e.preventDefault();
+        container.classList.remove('drop-target');
+        const workerName = e.dataTransfer.getData('worker');
+        if (workerName) {
+          // Remove from all crews
+          let removed = false;
+          crewsBuilderData.crews.forEach(crew => {
+            if (crew.members) {
+              const before = crew.members.length;
+              crew.members = crew.members.filter(m => m.name !== workerName);
+              if (crew.members.length < before) removed = true;
+            }
+          });
+          if (removed) {
+            initCrews();
+          }
+        }
+      });
+      
+      st.workers.forEach(worker => {
+        const isAssigned = assignedWorkers.has(worker.name);
+        const el = document.createElement('div');
+        // Use same classes as schedule page
+        el.className = 'crews-pool-worker' + (isAssigned ? ' assigned' : '');
+        el.draggable = true;
+        el.dataset.name = worker.name;
+        const col = wColor(worker.name);
+        el.innerHTML = '<span class="chip-dot" style="background:' + (isAssigned ? 'var(--text3)' : col) + ';"></span><span class="chip-name">' + worker.name + '</span>';
+        
+        el.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData('worker', worker.name);
+          el.classList.add('dragging');
+        });
+        el.addEventListener('dragend', () => el.classList.remove('dragging'));
+        container.appendChild(el);
+      });
+      pool.appendChild(container);
+    };
+    
+    window.renderCrewsList = function() {
+      const container = document.getElementById('dynamicCrewsList');
+      if (!container) return;
+      container.innerHTML = '';
+      crewsBuilderData.crews.forEach(crew => {
+        const crewBox = document.createElement('div');
+        crewBox.className = 'crew-box';
+        const header = document.createElement('div');
+        header.className = 'crew-box-header';
+        header.innerHTML = '<input type="text" class="crew-name-input" value="' + crew.name + '" onchange="renameCrew(\'' + crew.id + '\', this.value)" placeholder="Crew Name"><button class="remove-crew-btn" onclick="removeCrew(\'' + crew.id + '\')">Remove</button>';
+        const membersArea = document.createElement('div');
+        membersArea.className = 'crew-members';
+        membersArea.dataset.crewId = crew.id;
+        
+        // Add drop handlers
+        membersArea.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          membersArea.classList.add('drag-over');
+        });
+        membersArea.addEventListener('dragleave', () => {
+          membersArea.classList.remove('drag-over');
+        });
+        membersArea.addEventListener('drop', (e) => {
+          e.preventDefault();
+          membersArea.classList.remove('drag-over');
+          const workerName = e.dataTransfer.getData('worker');
+          if (workerName) {
+            // Remove from any existing crew first
+            crewsBuilderData.crews.forEach(c => {
+              if (c.members) c.members = c.members.filter(m => m.name !== workerName);
+            });
+            // Add to this crew
+            const worker = st.workers.find(w => w.name === workerName);
+            if (worker) {
+              if (!crew.members) crew.members = [];
+              // Only add if not already in this crew
+              if (!crew.members.find(m => m.name === workerName)) {
+                crew.members.push(worker);
+              }
+              initCrews();
+            }
+          }
+        });
+        
+        // Show assigned workers
+        if (!crew.members || crew.members.length === 0) {
+          membersArea.innerHTML = '<div class="empty-crew-msg">Drag workers here</div>';
+        } else {
+          crew.members.forEach(member => {
+            const row = document.createElement('div');
+            row.className = 'crew-member-row';
+            const col = wColor(member.name);
+            // Same structure as worker chips
+            row.innerHTML = '<span class="chip-dot" style="background:' + col + ';"></span><span class="chip-name">' + member.name + '</span>';
+            membersArea.appendChild(row);
+          });
+        }
+        crewBox.appendChild(header);
+        crewBox.appendChild(membersArea);
+        container.appendChild(crewBox);
+      });
+    };
+    
+    window.addCrew = function() {
+      const newId = 'crew_' + Date.now();
+      crewsBuilderData.crews.push({
+        id: newId,
+        name: 'Crew ' + (crewsBuilderData.crews.length + 1),
+        members: []
+      });
+      initCrews();
+    };
+    
+    window.removeCrew = function(crewId) {
+      if (crewsBuilderData.crews.length <= 1) {
+        alert('Must have at least one crew');
+        return;
+      }
+      const crew = crewsBuilderData.crews.find(c => c.id === crewId);
+      if (crew && crew.members) {
+        crew.members.forEach(m => crewsBuilderData.availableWorkers.push(m));
+      }
+      crewsBuilderData.crews = crewsBuilderData.crews.filter(c => c.id !== crewId);
+      initCrews();
+    };
+    
+    window.renameCrew = function(crewId, newName) {
+      const crew = crewsBuilderData.crews.find(c => c.id === crewId);
+      if (crew) crew.name = newName;
+    };
+    
+    window.removeWorkerFromCrew = function(workerName, crewId) {
+      const crew = crewsBuilderData.crews.find(c => c.id === crewId);
+      if (!crew) return;
+      crew.members = crew.members.filter(m => m.name !== workerName);
+      const worker = st.workers.find(w => w.name === workerName);
+      if (worker) crewsBuilderData.availableWorkers.push(worker);
+      initCrews();
+    };
+  }
+  
+  initCrews();
 }
 
 function renderInfoBar(){
@@ -2092,7 +2132,7 @@ function updateScheduleDate(value){
 function sendWhatsApp(){
   if(st.workers.length===0){alert('No workers in roster!\n\nAdd workers in the Roster tab first.');return;}
   
-  let msg='*'+(st.messageHeader||'Start Times')+'*\n\n';
+  let msg=(st.messageHeader?'*'+st.messageHeader+'*\n\n':'');
   
   // Show all time slots with assigned workers
   let hasAssignments=false;
@@ -2148,7 +2188,7 @@ function sendSlotToWhatsApp(slotId){
   const dateObj = new Date(year, month - 1, day); // month is 0-indexed
   const displayDate = dateObj.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric',year:'numeric'});
   
-  let msg='*'+(st.messageHeader||'Start Time')+'*\n' + displayDate + '\n\n';
+  let msg=(st.messageHeader?'*'+st.messageHeader+'*\n':'') + displayDate + '\n\n';
   msg+=tStr(tMin(slot.time)).replace(' ','').toLowerCase()+'\n';
   if(slot.desc&&slot.desc.trim())msg+=slot.desc.trim()+'\n';
   
@@ -2176,7 +2216,7 @@ function sendTelegram(){
   if(st.workers.length===0){alert('No workers in roster!\n\nAdd workers in the Roster tab first.');return;}
   
   const date=getScheduleDate();
-  let msg='Start Times\n' + date + '\n\n';
+  let msg=(st.messageHeader?st.messageHeader+'\n':'') + date + '\n\n';
   
   // Show all time slots with assigned workers
   let hasAssignments=false;
@@ -2355,7 +2395,7 @@ function saveCurrentUser(name){
 
 function saveMessageHeader(header){
   if(!header.trim()){
-    st.messageHeader='Start Times';
+    st.messageHeader='';
   }else{
     st.messageHeader=header.trim();
   }
@@ -2363,10 +2403,21 @@ function saveMessageHeader(header){
   save();
 }
 
+function updateMessageHeader(){
+  const input=document.getElementById('messageHeaderInput');
+  if(input){
+    const value=input.value.trim();
+    st.messageHeader=value;
+    save();
+    input.placeholder=value?'Current: '+value:'Start Times (blank for none)';
+  }
+}
+
 function loadMessageHeader(){
   const input=document.getElementById('messageHeaderInput');
   if(input){
-    input.value=st.messageHeader||'Start Times';
+    input.value=st.messageHeader||'';
+    input.placeholder=st.messageHeader?'Current: '+st.messageHeader:'Start Times (blank for none)';
   }
 }
 
@@ -2618,3 +2669,10 @@ init();
 
 </body>
 </html>
+
+
+@media (max-width: 768px) {
+  .crews-builder{grid-template-columns:1fr;grid-template-rows:auto 1fr;}
+  .crews-worker-pool{max-height:150px;}
+  #dynamicCrewsList{grid-template-columns:1fr;}
+}
