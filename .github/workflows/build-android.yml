@@ -35,6 +35,11 @@ jobs:
         cd pwa
         npm run build || echo "No build script"
       
+    - name: Add Android Platform
+      run: |
+        cd pwa
+        npx cap add android
+      
     - name: Sync Capacitor
       run: |
         cd pwa
