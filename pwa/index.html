@@ -1262,7 +1262,7 @@ function defaultWorkers(){
   }));
 }
 
-const API_URL = 'http://100.112.86.10:8080';
+const API_URL = window.location.origin;
 
 // Load from server (primary) or localStorage (fallback)
 async function loadFromServer() {
